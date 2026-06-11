@@ -8,14 +8,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --cream:#F7F3EA;
-  --paper:#FDFCF8;
-  --ink:#1C1A16;
-  --ink-soft:#5C564C;
-  --grey:#8E877A;
-  --gold:#B3955C;
-  --gold-soft:#D8C9A6;
-  --line:#E7DFCE;
+  --cream:#F5F0E6;
+  --paper:#FDFBF7;
+  --ink:#1A1714;
+  --ink-soft:#4A4540;
+  --grey:#8A8278;
+  --gold:#B09A6A;
+  --gold-soft:#D4C49E;
+  --line:#DDD5C4;
   --error:#9C4A35;
   --serif:'Noto Serif KR',serif;
   --sans:'Noto Sans KR',sans-serif;
@@ -24,57 +24,60 @@
 html{scroll-behavior:smooth}
 body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-weight:300;line-height:1.7;-webkit-font-smoothing:antialiased}
 
-.wrap{max-width:640px;margin:0 auto;padding:0 24px 120px}
+.wrap{max-width:700px;margin:0 auto;padding:0 32px 120px}
 
 /* ---------- 헤더 ---------- */
-.brand-head{padding:72px 0 0;text-align:center}
-.brand-mark{font-family:var(--serif);font-size:13px;letter-spacing:.42em;color:var(--gold);text-transform:uppercase;margin-bottom:28px}
-.brand-title{font-family:var(--serif);font-weight:500;font-size:clamp(26px,5vw,34px);letter-spacing:.04em;line-height:1.45}
+.brand-head{padding:80px 0 0;text-align:left}
+.brand-mark{font-size:11px;letter-spacing:0.5em;color:var(--gold);text-transform:uppercase;margin-bottom:20px;font-weight:300}
+.brand-title{font-family:var(--serif);font-weight:600;font-size:clamp(32px,6vw,48px);letter-spacing:-0.01em;line-height:1.2}
 .brand-title em{font-style:normal;color:var(--gold)}
-.brand-rule{width:48px;height:1px;background:var(--gold);margin:32px auto}
-.brand-intro{font-size:14.5px;color:var(--ink-soft);text-align:left;max-width:520px;margin:0 auto}
+.brand-rule{width:100%;height:1px;background:var(--gold);margin:28px 0}
+.brand-intro{font-size:13.5px;color:var(--ink-soft);line-height:1.8}
 .brand-intro p+p{margin-top:14px}
-.privacy-note{font-size:12.5px;color:var(--grey);margin-top:22px;text-align:center;letter-spacing:.02em}
+.privacy-note{font-size:12px;color:var(--grey);margin-top:22px;letter-spacing:0.01em}
 
 /* ---------- 진행 표시 ---------- */
-.progress{position:sticky;top:0;z-index:50;background:linear-gradient(var(--cream) 82%,rgba(247,243,234,0));padding:18px 0 22px}
-.progress-meta{display:flex;justify-content:space-between;align-items:baseline;max-width:640px;margin:0 auto;padding:0 24px 10px}
-.progress-no{font-family:var(--serif);font-size:12px;letter-spacing:.28em;color:var(--gold)}
-.progress-title{font-family:var(--serif);font-size:13px;letter-spacing:.12em;color:var(--ink-soft)}
-.progress-track{max-width:592px;margin:0 auto;height:1px;background:var(--line)}
+.progress{position:sticky;top:0;z-index:50;background:linear-gradient(var(--cream) 82%,rgba(245,240,230,0));padding:18px 0 22px}
+.progress-meta{display:flex;justify-content:space-between;align-items:baseline;max-width:700px;margin:0 auto;padding:0 32px 10px}
+.progress-no{font-family:var(--serif);font-size:11px;letter-spacing:0.3em;color:var(--gold);text-transform:uppercase}
+.progress-title{font-size:13px;letter-spacing:0.25em;color:var(--ink-soft);text-transform:uppercase}
+.progress-track{max-width:636px;margin:0 auto;height:1px;background:var(--line)}
 .progress-bar{height:1px;background:var(--gold);width:0;transition:width .5s cubic-bezier(.4,0,.2,1)}
 
 /* ---------- 섹션 ---------- */
 .section{display:none;animation:rise .45s ease both}
 .section.active{display:block}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.section-label{margin:48px 0 8px;font-family:var(--serif);font-size:12px;letter-spacing:.34em;color:var(--gold)}
-.section-title{font-family:var(--serif);font-weight:500;font-size:24px;letter-spacing:.05em;margin-bottom:14px}
-.section-rule{width:36px;height:1px;background:var(--gold-soft);margin-bottom:18px}
-.section-intro{font-size:14px;color:var(--ink-soft);margin-bottom:36px}
+.section-label{margin:52px 0 6px;font-size:10px;letter-spacing:0.4em;color:var(--gold);text-transform:uppercase}
+.section-title{font-family:var(--serif);font-weight:500;font-size:22px;letter-spacing:0.08em;padding-bottom:14px;border-bottom:1px solid var(--gold-soft)}
+.section-rule{display:none}
+.section-intro{font-size:13px;color:var(--grey);margin:16px 0 32px;line-height:1.8}
 
 /* ---------- 질문 카드 ---------- */
-.q{background:var(--paper);border:1px solid var(--line);padding:30px 30px 32px;margin-bottom:18px}
-.q.q-error{border-color:var(--error)}
-.q-label{font-weight:500;font-size:15.5px;letter-spacing:.01em}
+.q{background:transparent;border:none;border-top:1px solid var(--line);padding:24px 0 28px;margin-bottom:0;border-radius:0}
+.q+.q{border-top:1px solid var(--line)}
+.q:first-of-type{border-top:none}
+.q.q-error{border-top-color:var(--error)}
+.q-label{font-size:13.5px;font-weight:500;letter-spacing:0.04em;color:var(--ink)}
 .q-req{color:var(--gold);margin-left:4px;font-family:var(--serif)}
-.q-help{font-size:13px;color:var(--grey);margin-top:5px}
+.q-help{font-size:12px;color:var(--grey);margin-top:4px;letter-spacing:0.01em}
 .q-body{margin-top:20px}
-.q-errmsg{display:none;font-size:12.5px;color:var(--error);margin-top:12px}
+.q-errmsg{display:none;font-size:12px;color:var(--error);margin-top:10px}
 .q-error .q-errmsg{display:block}
 
-input[type=text]{width:100%;max-width:380px;border:none;border-bottom:1px solid var(--line);background:transparent;padding:7px 2px;font:300 15px var(--sans);color:var(--ink);transition:border-color .25s}
-textarea{width:100%;border:none;border-bottom:1px solid var(--line);background:transparent;padding:7px 2px;font:300 15px var(--sans);color:var(--ink);resize:vertical;min-height:64px;transition:border-color .25s}
+input[type=text]{width:100%;max-width:420px;border:none;border-bottom:1px solid var(--line);background:transparent;padding:10px 0;font:300 14.5px var(--sans);color:var(--ink);transition:border-color .25s}
+textarea{width:100%;border:none;border-bottom:1px solid var(--line);background:transparent;padding:10px 0;font:300 14.5px var(--sans);color:var(--ink);resize:vertical;min-height:64px;transition:border-color .25s}
 input[type=text]:focus,textarea:focus{outline:none;border-bottom-color:var(--gold)}
-::placeholder{color:#C4BCAB}
+::placeholder{color:#C8C0B0}
 
 /* ---------- 선택지 ---------- */
-.opt{display:flex;align-items:flex-start;gap:14px;padding:9px 0;cursor:pointer;font-size:15px}
+.opt{display:flex;align-items:flex-start;gap:12px;padding:8px 0;cursor:pointer;font-size:14px;font-weight:300;color:var(--ink)}
 .opt input{position:absolute;opacity:0;pointer-events:none}
-.mark{flex:0 0 18px;height:18px;margin-top:4px;border:1px solid var(--gold-soft);position:relative;transition:border-color .2s}
+.mark{flex:0 0 16px;height:16px;margin-top:3px;border:1px solid var(--gold-soft);position:relative;transition:border-color .2s}
 .opt.radio .mark{border-radius:50%}
-.opt.radio .mark::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--gold);transform:scale(0);transition:transform .18s ease}
-.opt.check .mark::after{content:"";position:absolute;left:5px;top:1.5px;width:5px;height:9px;border:solid var(--gold);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) scale(0);transition:transform .18s ease}
+.opt.radio .mark::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--gold);transform:scale(0);transition:transform .18s ease}
+.opt.check .mark{border-radius:0}
+.opt.check .mark::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid var(--gold);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) scale(0);transition:transform .18s ease}
 .opt input:checked~.mark{border-color:var(--gold)}
 .opt.radio input:checked~.mark::after{transform:scale(1)}
 .opt.check input:checked~.mark::after{transform:rotate(45deg) scale(1)}
@@ -83,32 +86,37 @@ input[type=text]:focus,textarea:focus{outline:none;border-bottom-color:var(--gol
 
 /* ---------- 그리드(끼니별 규칙성) ---------- */
 table.grid{width:100%;border-collapse:collapse;font-size:14.5px}
-table.grid th{font-weight:400;color:var(--grey);font-size:13px;padding:8px;letter-spacing:.06em}
-table.grid td{padding:12px 8px;border-top:1px solid var(--line);text-align:center}
+table.grid th{font-weight:400;color:var(--grey);font-size:11px;padding:8px;letter-spacing:0.2em;text-transform:uppercase}
+table.grid td{padding:14px 8px;border-top:1px solid var(--line);text-align:center}
 table.grid td:first-child{text-align:left;font-weight:400}
 table.grid .opt{justify-content:center;padding:0}
 table.grid .mark{margin-top:0}
 
 /* ---------- 내비게이션 ---------- */
 .nav{display:flex;gap:12px;margin-top:40px;align-items:center}
-button{font-family:var(--sans);cursor:pointer;letter-spacing:.14em;transition:all .25s}
-.btn-next{border:1px solid var(--ink);background:var(--ink);color:var(--cream);padding:14px 38px;font-size:13px;font-weight:400}
+button{font-family:var(--sans);cursor:pointer;letter-spacing:0.2em;transition:all .3s ease;border-radius:0}
+.btn-next{border:1px solid var(--ink);background:var(--ink);color:var(--cream);padding:14px 48px;font-size:12px;font-weight:400;text-transform:uppercase}
 .btn-next:hover{background:var(--gold);border-color:var(--gold)}
-.btn-back{border:1px solid var(--line);background:transparent;color:var(--ink-soft);padding:14px 28px;font-size:13px}
+.btn-back{border:1px solid var(--line);background:transparent;color:var(--ink-soft);padding:14px 32px;font-size:12px;text-transform:uppercase}
 .btn-back:hover{border-color:var(--grey)}
 .btn-next:disabled{opacity:.45;cursor:wait}
 
 /* ---------- 완료 화면 ---------- */
 .done{display:none;text-align:center;padding-top:96px;animation:rise .6s ease both}
-.done .brand-mark{margin-bottom:36px}
-.done-title{font-family:var(--serif);font-weight:500;font-size:26px;letter-spacing:.06em;line-height:1.6}
-.done-text{margin:26px auto 0;max-width:420px;font-size:14.5px;color:var(--ink-soft)}
+.done .brand-mark{margin-bottom:36px;color:var(--gold);letter-spacing:0.5em}
+.done-title{font-family:var(--serif);font-weight:500;font-size:28px;letter-spacing:0.06em;line-height:1.6}
+.done-text{margin:26px auto 0;max-width:420px;font-size:13.5px;color:var(--ink-soft);line-height:1.8}
 
-@media (max-width:480px){
-  .q{padding:24px 20px 26px}
-  .brand-head{padding-top:52px}
+@media(max-width:768px){
+  .wrap{padding:0 20px 120px}
+  .progress-meta{padding:0 20px 10px}
+  .progress-track{max-width:calc(100% - 40px)}
 }
-@media (prefers-reduced-motion:reduce){
+@media(max-width:480px){
+  .brand-title{font-size:28px}
+  .q{padding:20px 0}
+}
+@media(prefers-reduced-motion:reduce){
   .section,.done{animation:none}
   .progress-bar{transition:none}
 }
