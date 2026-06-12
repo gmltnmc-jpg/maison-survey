@@ -5,289 +5,709 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Maison de Balance · 초진 설문</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
 <style>
+/* ─────────────────────────────────────────
+   TOKENS
+───────────────────────────────────────── */
 :root{
   --cream:#F5F0E6;
   --paper:#FDFBF7;
   --ink:#1A1714;
+  --ink-mid:#2E2B26;
   --ink-soft:#4A4540;
   --grey:#8A8278;
   --gold:#B09A6A;
   --gold-soft:#D4C49E;
   --line:#DDD5C4;
+  --line-dark:rgba(178,147,85,.35);
   --error:#9C4A35;
   --serif:'Noto Serif KR',serif;
   --sans:'Noto Sans KR',sans-serif;
+  --latin:'Cormorant Garamond',serif;
 }
+
+/* ─────────────────────────────────────────
+   RESET
+───────────────────────────────────────── */
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-weight:300;line-height:1.7;-webkit-font-smoothing:antialiased}
-
-.wrap{max-width:700px;margin:0 auto;padding:0 32px 120px}
-
-/* ---------- 헤더 ---------- */
-.brand-head{padding:80px 0 0;text-align:left}
-.brand-mark{font-size:11px;letter-spacing:0.5em;color:var(--gold);text-transform:uppercase;margin-bottom:20px;font-weight:300}
-.brand-title{font-family:var(--serif);font-weight:600;font-size:clamp(32px,6vw,48px);letter-spacing:-0.01em;line-height:1.2}
-.brand-title em{font-style:normal;color:var(--gold)}
-.brand-rule{width:100%;height:1px;background:var(--gold);margin:28px 0}
-.brand-intro{font-size:13.5px;color:var(--ink-soft);line-height:1.8}
-.brand-intro p+p{margin-top:14px}
-.privacy-note{font-size:12px;color:var(--grey);margin-top:22px;letter-spacing:0.01em}
-
-/* ---------- 진행 표시 ---------- */
-.progress{position:sticky;top:0;z-index:50;background:linear-gradient(var(--cream) 82%,rgba(245,240,230,0));padding:18px 0 22px}
-.progress-meta{display:flex;justify-content:space-between;align-items:baseline;max-width:700px;margin:0 auto;padding:0 32px 10px}
-.progress-no{font-family:var(--serif);font-size:11px;letter-spacing:0.3em;color:var(--gold);text-transform:uppercase}
-.progress-title{font-size:13px;letter-spacing:0.25em;color:var(--ink-soft);text-transform:uppercase}
-.progress-track{max-width:636px;margin:0 auto;height:1px;background:var(--line)}
-.progress-bar{height:1px;background:var(--gold);width:0;transition:width .5s cubic-bezier(.4,0,.2,1)}
-
-/* ---------- 섹션 ---------- */
-.section{display:none;animation:rise .45s ease both}
-.section.active{display:block}
-@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.section-label{margin:52px 0 6px;font-size:10px;letter-spacing:0.4em;color:var(--gold);text-transform:uppercase}
-.section-title{font-family:var(--serif);font-weight:500;font-size:22px;letter-spacing:0.08em;padding-bottom:14px;border-bottom:1px solid var(--gold-soft)}
-.section-rule{display:none}
-.section-intro{font-size:13px;color:var(--grey);margin:16px 0 32px;line-height:1.8}
-
-/* ---------- 질문 카드 ---------- */
-.q{background:transparent;border:none;border-top:1px solid var(--line);padding:24px 0 28px;margin-bottom:0;border-radius:0}
-.q+.q{border-top:1px solid var(--line)}
-.q:first-of-type{border-top:none}
-.q.q-error{border-top-color:var(--error)}
-.q-label{font-size:13.5px;font-weight:500;letter-spacing:0.04em;color:var(--ink)}
-.q-req{color:var(--gold);margin-left:4px;font-family:var(--serif)}
-.q-help{font-size:12px;color:var(--grey);margin-top:4px;letter-spacing:0.01em}
-.q-body{margin-top:20px}
-.q-errmsg{display:none;font-size:12px;color:var(--error);margin-top:10px}
-.q-error .q-errmsg{display:block}
-
-input[type=text]{width:100%;max-width:420px;border:none;border-bottom:1px solid var(--line);background:transparent;padding:10px 0;font:300 14.5px var(--sans);color:var(--ink);transition:border-color .25s}
-textarea{width:100%;border:none;border-bottom:1px solid var(--line);background:transparent;padding:10px 0;font:300 14.5px var(--sans);color:var(--ink);resize:vertical;min-height:64px;transition:border-color .25s}
-input[type=text]:focus,textarea:focus{outline:none;border-bottom-color:var(--gold)}
-::placeholder{color:#C8C0B0}
-
-/* ---------- 선택지 ---------- */
-.opt{display:flex;align-items:flex-start;gap:12px;padding:8px 0;cursor:pointer;font-size:14px;font-weight:300;color:var(--ink)}
-.opt input{position:absolute;opacity:0;pointer-events:none}
-.mark{flex:0 0 16px;height:16px;margin-top:3px;border:1px solid var(--gold-soft);position:relative;transition:border-color .2s}
-.opt.radio .mark{border-radius:50%}
-.opt.radio .mark::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--gold);transform:scale(0);transition:transform .18s ease}
-.opt.check .mark{border-radius:0}
-.opt.check .mark::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid var(--gold);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) scale(0);transition:transform .18s ease}
-.opt input:checked~.mark{border-color:var(--gold)}
-.opt.radio input:checked~.mark::after{transform:scale(1)}
-.opt.check input:checked~.mark::after{transform:rotate(45deg) scale(1)}
-.opt input:focus-visible~.mark{outline:2px solid var(--gold);outline-offset:2px}
-.opt-other-input{margin-left:8px;max-width:240px !important}
-
-/* ---------- 그리드(끼니별 규칙성) ---------- */
-table.grid{width:100%;border-collapse:collapse;font-size:14.5px}
-table.grid th{font-weight:400;color:var(--grey);font-size:11px;padding:8px;letter-spacing:0.2em;text-transform:uppercase}
-table.grid td{padding:14px 8px;border-top:1px solid var(--line);text-align:center}
-table.grid td:first-child{text-align:left;font-weight:400}
-table.grid .opt{justify-content:center;padding:0}
-table.grid .mark{margin-top:0}
-
-/* ---------- 내비게이션 ---------- */
-.nav{display:flex;gap:12px;margin-top:40px;align-items:center}
-button{font-family:var(--sans);cursor:pointer;letter-spacing:0.2em;transition:all .3s ease;border-radius:0}
-.btn-next{border:1px solid var(--ink);background:var(--ink);color:var(--cream);padding:14px 48px;font-size:12px;font-weight:400;text-transform:uppercase}
-.btn-next:hover{background:var(--gold);border-color:var(--gold)}
-.btn-back{border:1px solid var(--line);background:transparent;color:var(--ink-soft);padding:14px 32px;font-size:12px;text-transform:uppercase}
-.btn-back:hover{border-color:var(--grey)}
-.btn-next:disabled{opacity:.45;cursor:wait}
-
-/* ---------- 완료 화면 ---------- */
-.done{display:none;text-align:center;padding-top:96px;animation:rise .6s ease both}
-.done .brand-mark{margin-bottom:36px;color:var(--gold);letter-spacing:0.5em}
-.done-title{font-family:var(--serif);font-weight:500;font-size:28px;letter-spacing:0.06em;line-height:1.6}
-.done-text{margin:26px auto 0;max-width:420px;font-size:13.5px;color:var(--ink-soft);line-height:1.8}
-
-@media(max-width:768px){
-  .wrap{padding:0 20px 120px}
-  .progress-meta{padding:0 20px 10px}
-  .progress-track{max-width:calc(100% - 40px)}
+body{
+  background:var(--cream);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:300;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  position:relative;
 }
+
+/* ─────────────────────────────────────────
+   TAMBOUR BOARD BACKGROUND
+   나뭇살(tambour) 수직 홈 패턴
+   세밀한 세로선이 교차하는 공예품 표면 느낌
+   opacity 30%로 크림 배경 위에 조용히 깔림
+───────────────────────────────────────── */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+
+  /* 수직 홈: 얇은 실선이 일정 간격으로 반복 — 나뭇살 결 */
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 11px,
+      rgba(140,120,80,.18) 11px,
+      rgba(140,120,80,.18) 12px
+    ),
+    /* 대각 보조결 — 짜임새 (빛 반사 각도) */
+    repeating-linear-gradient(
+      135deg,
+      transparent 0px,
+      transparent 23px,
+      rgba(178,147,85,.07) 23px,
+      rgba(178,147,85,.07) 24px
+    );
+  opacity:.30;
+}
+
+/* ─────────────────────────────────────────
+   APP SHELL — 2단 레이아웃 (The Atelier)
+───────────────────────────────────────── */
+.atelier{
+  position:relative;
+  z-index:1;
+  min-height:100vh;
+  display:flex;
+}
+
+/* 왼쪽 고정 패널 (브랜드 컨텍스트) */
+.aside{
+  width:38%;
+  flex:0 0 38%;
+  min-height:100vh;
+  position:sticky;
+  top:0;
+  height:100vh;
+  background:var(--ink-mid);
+  padding:52px 42px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+
+  /* aside 자체에도 tambour 질감 — 어두운 톤으로 */
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 13px,
+      rgba(255,255,255,.025) 13px,
+      rgba(255,255,255,.025) 14px
+    );
+}
+
+.aside-brand{
+  font-family:var(--latin);
+  font-size:11px;
+  letter-spacing:.42em;
+  text-transform:uppercase;
+  color:var(--gold);
+  font-weight:400;
+  margin-bottom:32px;
+}
+
+.aside-no{
+  font-family:var(--latin);
+  font-style:italic;
+  font-size:42px;
+  color:var(--gold-soft);
+  line-height:1;
+  transition:all .5s cubic-bezier(.4,0,.2,1);
+}
+
+.aside-ey{
+  font-size:9px;
+  letter-spacing:.38em;
+  text-transform:uppercase;
+  color:rgba(245,240,230,.45);
+  margin-top:8px;
+  transition:all .5s;
+}
+
+.aside-title{
+  font-family:var(--serif);
+  font-weight:400;
+  font-size:26px;
+  letter-spacing:.04em;
+  color:var(--cream);
+  margin:20px 0 14px;
+  line-height:1.4;
+  transition:all .5s cubic-bezier(.4,0,.2,1);
+}
+
+.aside-intro{
+  font-family:var(--serif);
+  font-weight:300;
+  font-style:italic;
+  color:rgba(245,240,230,.58);
+  font-size:12.5px;
+  line-height:1.85;
+  transition:all .5s;
+}
+
+/* 섹션 진행 인디케이터 */
+.aside-rail{
+  margin-top:auto;
+  padding-top:28px;
+}
+
+.aside-rail-label{
+  font-size:9px;
+  letter-spacing:.32em;
+  text-transform:uppercase;
+  color:rgba(245,240,230,.35);
+  margin-bottom:12px;
+}
+
+.aside-dots{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+}
+
+.aside-dot{
+  width:24px;
+  height:2px;
+  border-radius:1px;
+  background:rgba(245,240,230,.18);
+  transition:background .4s, width .4s;
+}
+
+.aside-dot.done{ background:var(--gold); }
+.aside-dot.cur{ background:var(--gold-soft); width:36px; }
+
+.aside-progress-text{
+  font-family:var(--latin);
+  font-style:italic;
+  font-size:12px;
+  color:rgba(245,240,230,.5);
+  margin-top:14px;
+  letter-spacing:.04em;
+}
+
+/* 오른쪽 질문 영역 */
+.main{
+  flex:1;
+  padding:52px 56px 100px;
+  overflow-y:auto;
+  min-height:100vh;
+}
+
+/* ─────────────────────────────────────────
+   커버 (첫 화면, aside 없이 전체 화면)
+───────────────────────────────────────── */
+.cover{
+  position:relative;
+  z-index:1;
+  display:none; /* JS로 제어 */
+  min-height:100vh;
+  padding:80px 64px;
+  max-width:900px;
+  margin:0 auto;
+}
+
+.cover-mark{
+  font-family:var(--latin);
+  font-size:11px;
+  letter-spacing:.46em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:28px;
+}
+
+.cover-rule{
+  width:48px;
+  height:1px;
+  background:var(--gold);
+  margin:26px 0;
+}
+
+.cover-title{
+  font-family:var(--serif);
+  font-weight:600;
+  font-size:clamp(34px,6vw,56px);
+  letter-spacing:-.01em;
+  line-height:1.2;
+  color:var(--ink);
+}
+
+.cover-title em{
+  font-style:normal;
+  color:var(--gold);
+}
+
+.cover-intro{
+  margin-top:28px;
+  font-size:14px;
+  color:var(--ink-soft);
+  line-height:1.85;
+  max-width:520px;
+}
+
+.cover-intro p+p{margin-top:14px;}
+
+.cover-privacy{
+  font-size:11.5px;
+  color:var(--grey);
+  margin-top:20px;
+  letter-spacing:.01em;
+}
+
+.cover-start{
+  margin-top:48px;
+  border:1px solid var(--ink);
+  background:var(--ink);
+  color:var(--cream);
+  padding:16px 52px;
+  font-family:var(--sans);
+  font-size:11.5px;
+  font-weight:400;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all .3s;
+}
+
+.cover-start:hover{
+  background:var(--gold);
+  border-color:var(--gold);
+}
+
+/* ─────────────────────────────────────────
+   섹션
+───────────────────────────────────────── */
+.section{
+  display:none;
+  animation:rise .42s cubic-bezier(.4,0,.2,1) both;
+}
+
+.section.active{ display:block; }
+
+@keyframes rise{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:none}
+}
+
+/* ─────────────────────────────────────────
+   질문 카드
+───────────────────────────────────────── */
+.q{
+  border-top:1px solid var(--line);
+  padding:26px 0 28px;
+}
+
+.q+.q{ border-top:1px solid var(--line); }
+.q:first-of-type{ border-top:none; padding-top:4px; }
+.q.q-error{ border-top-color:var(--error); }
+
+.q-label{
+  font-size:13.5px;
+  font-weight:500;
+  letter-spacing:.03em;
+  color:var(--ink);
+  line-height:1.55;
+}
+
+.q-req{ color:var(--gold); margin-left:4px; font-family:var(--serif); }
+
+.q-help{
+  font-size:11.5px;
+  color:var(--grey);
+  margin-top:5px;
+  letter-spacing:.01em;
+  line-height:1.65;
+}
+
+.q-body{ margin-top:18px; }
+
+.q-errmsg{
+  display:none;
+  font-size:11.5px;
+  color:var(--error);
+  margin-top:10px;
+}
+
+.q-error .q-errmsg{ display:block; }
+
+/* ─────────────────────────────────────────
+   입력 필드
+───────────────────────────────────────── */
+input[type=text]{
+  width:100%;
+  max-width:400px;
+  border:none;
+  border-bottom:1px solid var(--line);
+  background:transparent;
+  padding:10px 0;
+  font:300 14px var(--sans);
+  color:var(--ink);
+  transition:border-color .22s;
+}
+
+textarea{
+  width:100%;
+  border:none;
+  border-bottom:1px solid var(--line);
+  background:transparent;
+  padding:10px 0;
+  font:300 14px var(--sans);
+  color:var(--ink);
+  resize:vertical;
+  min-height:64px;
+  transition:border-color .22s;
+}
+
+input[type=text]:focus,
+textarea:focus{
+  outline:none;
+  border-bottom-color:var(--gold);
+}
+
+::placeholder{ color:#C8C0B0; }
+
+/* ─────────────────────────────────────────
+   선택지
+───────────────────────────────────────── */
+.opt{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:9px 0;
+  cursor:pointer;
+  font-size:13.5px;
+  font-weight:300;
+  color:var(--ink);
+}
+
+.opt input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+
+.mark{
+  flex:0 0 15px;
+  height:15px;
+  margin-top:3px;
+  border:1px solid var(--gold-soft);
+  position:relative;
+  transition:border-color .18s;
+}
+
+.opt.radio .mark{ border-radius:50%; }
+
+.opt.radio .mark::after{
+  content:'';
+  position:absolute;
+  inset:3px;
+  border-radius:50%;
+  background:var(--gold);
+  transform:scale(0);
+  transition:transform .16s ease;
+}
+
+.opt.check .mark{ border-radius:0; }
+
+.opt.check .mark::after{
+  content:'';
+  position:absolute;
+  left:4px;
+  top:1px;
+  width:4px;
+  height:8px;
+  border:solid var(--gold);
+  border-width:0 1.5px 1.5px 0;
+  transform:rotate(45deg) scale(0);
+  transition:transform .16s ease;
+}
+
+.opt input:checked ~ .mark{ border-color:var(--gold); }
+.opt.radio input:checked ~ .mark::after{ transform:scale(1); }
+.opt.check input:checked ~ .mark::after{ transform:rotate(45deg) scale(1); }
+.opt input:focus-visible ~ .mark{ outline:2px solid var(--gold); outline-offset:2px; }
+
+.opt-other-input{
+  margin-left:8px;
+  max-width:220px !important;
+}
+
+/* ─────────────────────────────────────────
+   그리드 (끼니별 규칙성)
+───────────────────────────────────────── */
+table.grid{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13.5px;
+}
+
+table.grid th{
+  font-weight:400;
+  color:var(--grey);
+  font-size:10.5px;
+  padding:8px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+}
+
+table.grid td{
+  padding:12px 8px;
+  border-top:1px solid var(--line);
+  text-align:center;
+}
+
+table.grid td:first-child{
+  text-align:left;
+  font-weight:400;
+}
+
+table.grid .opt{
+  justify-content:center;
+  padding:0;
+}
+
+table.grid .mark{ margin-top:0; }
+
+/* ─────────────────────────────────────────
+   네비게이션
+───────────────────────────────────────── */
+.nav{
+  display:flex;
+  gap:12px;
+  margin-top:44px;
+  align-items:center;
+}
+
+button{
+  font-family:var(--sans);
+  cursor:pointer;
+  letter-spacing:.2em;
+  transition:all .28s;
+  border-radius:0;
+}
+
+.btn-next{
+  border:1px solid var(--ink);
+  background:var(--ink);
+  color:var(--cream);
+  padding:14px 48px;
+  font-size:11.5px;
+  font-weight:400;
+  text-transform:uppercase;
+}
+
+.btn-next:hover{
+  background:var(--gold);
+  border-color:var(--gold);
+}
+
+.btn-back{
+  border:1px solid var(--line);
+  background:transparent;
+  color:var(--ink-soft);
+  padding:14px 32px;
+  font-size:11.5px;
+  text-transform:uppercase;
+}
+
+.btn-back:hover{ border-color:var(--grey); }
+
+.btn-next:disabled{
+  opacity:.4;
+  cursor:wait;
+}
+
+/* ─────────────────────────────────────────
+   완료 화면
+───────────────────────────────────────── */
+.done{
+  display:none;
+  text-align:center;
+  padding:100px 40px;
+  animation:rise .6s ease both;
+}
+
+.done-brand{
+  font-family:var(--latin);
+  font-size:11px;
+  letter-spacing:.46em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:36px;
+}
+
+.done-title{
+  font-family:var(--serif);
+  font-weight:500;
+  font-size:28px;
+  letter-spacing:.06em;
+  line-height:1.6;
+  color:var(--cream);
+}
+
+.done-text{
+  margin:26px auto 0;
+  max-width:400px;
+  font-size:13px;
+  color:rgba(245,240,230,.65);
+  line-height:1.85;
+  font-family:var(--serif);
+  font-weight:300;
+  font-style:italic;
+}
+
+/* ─────────────────────────────────────────
+   반응형
+───────────────────────────────────────── */
+@media(max-width:860px){
+  .cover{ padding:60px 32px; }
+
+  /* 모바일: aside가 상단 헤더로 접힘 */
+  .atelier{ flex-direction:column; }
+
+  .aside{
+    width:100%;
+    min-height:auto;
+    height:auto;
+    position:relative;
+    padding:32px 28px;
+    flex-direction:row;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:14px;
+  }
+
+  .aside-brand{ display:none; }
+  .aside-no{ font-size:28px; }
+  .aside-title{ font-size:18px; margin:0; }
+  .aside-ey{ margin-top:0; }
+  .aside-intro{ display:none; }
+  .aside-rail{ margin-top:12px; width:100%; padding-top:12px; }
+
+  .main{ padding:36px 24px 80px; }
+}
+
 @media(max-width:480px){
-  .brand-title{font-size:28px}
-  .q{padding:20px 0}
+  .cover{ padding:48px 20px; }
+  .cover-title{ font-size:28px; }
+  .main{ padding:28px 20px 72px; }
+  .aside{ padding:24px 20px; }
 }
+
 @media(prefers-reduced-motion:reduce){
-  .section,.done{animation:none}
-  .progress-bar{transition:none}
+  .section,.done{ animation:none; }
+  .aside-no, .aside-title, .aside-intro{ transition:none; }
 }
 </style>
 </head>
 <body>
 
-<div class="progress" id="progress" style="display:none">
-  <div class="progress-meta">
-    <span class="progress-no" id="pNo"></span>
-    <span class="progress-title" id="pTitle"></span>
+<!-- ═══════════════════════════════════════
+     커버 화면 (시작 전 랜딩)
+════════════════════════════════════════ -->
+<div class="cover" id="cover">
+  <div class="cover-mark">Maison de Balance</div>
+  <h1 class="cover-title">몸의 균형을<br>다시 <em>설계</em>하다</h1>
+  <div class="cover-rule"></div>
+  <div class="cover-intro">
+    <p>우리는 체중만 보지 않습니다. 수면, 식사, 장내환경, 호르몬 리듬, 운동, 수분과 미네랄 균형까지 함께 살핍니다.</p>
+    <p>한의학적 진단을 바탕으로, 선생님의 몸이 다시 균형을 찾는 과정을 설계합니다. 편안한 마음으로 솔직하게 답해주세요.</p>
+    <p class="cover-privacy">작성하신 모든 내용은 오직 선생님을 위한 맞춤 관리에만 사용됩니다.</p>
   </div>
-  <div class="progress-track"><div class="progress-bar" id="pBar"></div></div>
+  <button class="cover-start" id="startBtn">설문 시작하기</button>
 </div>
 
-<div class="wrap">
+<!-- ═══════════════════════════════════════
+     The Atelier — 2단 레이아웃
+════════════════════════════════════════ -->
+<div class="atelier" id="atelier" style="display:none">
 
-  <header class="brand-head" id="head">
-    <div class="brand-mark">Maison de Balance</div>
-    <h1 class="brand-title">몸의 균형을<br>다시 <em>설계</em>하다</h1>
-    <div class="brand-rule"></div>
-    <div class="brand-intro">
-      <p>우리는 체중만 보지 않습니다. 수면, 식사, 장내환경, 호르몬 리듬, 운동, 수분과 미네랄 균형까지 함께 살핍니다.</p>
-      <p>한의학적 진단을 바탕으로, 선생님의 몸이 다시 균형을 찾는 과정을 설계합니다. 편안한 마음으로 솔직하게 답해주세요.</p>
-      <p class="privacy-note">작성하신 모든 내용은 오직 선생님을 위한 맞춤 관리에만 사용됩니다.</p>
+  <!-- 왼쪽: 브랜드 컨텍스트 고정 패널 -->
+  <aside class="aside" id="aside">
+    <div class="aside-brand">Maison de Balance</div>
+    <div class="aside-no" id="asideNo">No. 01</div>
+    <div class="aside-ey" id="asideEy">Basic Information</div>
+    <div class="aside-title" id="asideTitle">기본 정보</div>
+    <div class="aside-intro" id="asideIntro"></div>
+    <div class="aside-rail">
+      <div class="aside-rail-label">진행</div>
+      <div class="aside-dots" id="asideDots"></div>
+      <div class="aside-progress-text" id="asideProgress"></div>
     </div>
-  </header>
+  </aside>
 
-  <main id="form"></main>
+  <!-- 오른쪽: 질문 영역 -->
+  <main class="main" id="form"></main>
 
-  <div class="done" id="done">
-    <div class="brand-mark">Maison de Balance</div>
-    <h2 class="done-title">감사합니다.<br>선생님의 리듬을 살펴보겠습니다.</h2>
-    <p class="done-text">작성해주신 내용은 초진 상담에서 원장이 직접 검토합니다. 예약하신 시간에 맞춰 조용히 준비해 두겠습니다.</p>
-  </div>
+</div>
 
+<!-- 완료 화면 (aside 내부에 표시) -->
+<div class="atelier" id="doneWrap" style="display:none">
+  <aside class="aside">
+    <div class="aside-brand">Maison de Balance</div>
+    <div class="aside-no" style="opacity:.5">No. 12</div>
+    <div class="aside-ey">Complete</div>
+    <div class="aside-title">마지막 질문</div>
+    <div class="aside-intro">모든 내용을 작성해주셨습니다.</div>
+    <div class="aside-rail">
+      <div class="aside-rail-label">진행</div>
+      <div class="aside-dots" id="doneDots"></div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="done" id="done" style="display:block">
+      <div class="done-brand">Maison de Balance</div>
+      <h2 class="done-title">감사합니다.<br>선생님의 리듬을<br>살펴보겠습니다.</h2>
+      <p class="done-text">작성해주신 내용은 초진 상담에서 원장이 직접 검토합니다.<br>예약하신 시간에 맞춰 조용히 준비해 두겠습니다.</p>
+    </div>
+  </main>
 </div>
 
 <script>
 /* ============================================================
-   Supabase 연결 설정 — 아래 두 값만 채우면 저장이 활성화됩니다.
-   비어 있으면 데모 모드(콘솔 출력)로 동작합니다.
+   Supabase 연결 — 기존 값 그대로 보존
 ============================================================ */
-const SUPABASE_URL = "https://easvjmqsivolzcrqfjbx.supabase.co";
+const SUPABASE_URL      = "https://easvjmqsivolzcrqfjbx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhc3ZqbXFzaXZvbHpjcnFmamJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5ODQ5NzAsImV4cCI6MjA5NjU2MDk3MH0.F6B8RevsBurRlniu3Z7leckbXL4q5WUBMBMLmyJ6YBY";
-const TABLE = "intake_responses";
+const TABLE             = "intake_responses";
 
 /* ============================================================
-   설문 구조 정의 — PDF의 구글폼 페이지·문항 순서를 그대로 보존
-   type: text | textarea | radio | check | grid
-   other:true → "기타:" 직접입력 포함
+   SECTIONS 데이터 — 기존 완전 보존
 ============================================================ */
-const SECTIONS = [
-{no:"01",title:"기본 정보",items:[
- {id:"name",t:"text",l:"성함",req:1},
- {id:"rrn",t:"text",l:"주민등록번호",req:1,h:"원활한 상담과 본인확인을 위해서 뒷번호까지 작성해주세요. ( '-' 빼고 숫자만 )"},
- {id:"phone",t:"text",l:"연락처",req:1},
- {id:"address",t:"text",l:"주소"},
- {id:"gender",t:"radio",l:"성별",req:1,o:["여성","남성"]},
- {id:"birth_count",t:"radio",l:"출산 경험",o:["없음","1회","2회","3회 이상"]},
- {id:"referral",t:"radio",l:"내원 경로",h:"어떻게 저희를 알게 되셨나요?",o:["지인 소개","인터넷 검색","SNS (인스타그램·블로그)"],other:1},
- {id:"referrer",t:"text",l:"소개해주신 분",h:"지인 소개로 오신 경우에만 적어주세요."}
-]},
-{no:"02",title:"개인정보 수집 및 활용 동의",intro:"본 의원은 고객의 개인 정보를 소중히 여기며, 관련 법률을 철저히 준수합니다. 수집된 정보(성명, 연락처, 생년월일, 주소)는 맞춤 진료 및 예약 안내 목적에 한해 사용되며, 제3자에게 제공되지 않습니다.",items:[
- {id:"privacy",t:"radio",l:"개인정보 수집 및 활용에 동의합니다",req:1,o:["동의합니다"]}
-]},
-{no:"03",title:"몸의 목표와 기대",intro:"이 설문에서 가장 중요한 부분입니다. 원하시는 변화를 있는 그대로 말씀해주세요.",items:[
- {id:"visit_reason",t:"textarea",l:"지금 이 클리닉을 찾아오신 가장 큰 이유는 무엇인가요?",req:1},
- {id:"three_month",t:"textarea",l:"3개월 후, 어떤 몸 상태가 되어 있기를 바라시나요?",req:1,h:"체중 숫자보다, 어떻게 느끼고 싶은지를 중심으로 적어주세요."},
- {id:"concerns",t:"check",l:"현재 가장 불편하거나 신경 쓰이는 부분",h:"해당하는 것을 모두 선택해주세요.",o:["체중 및 체형","만성 피로, 무기력함","수면의 질","소화·장 건강","부종","호르몬·생리 주기","피부 컨디션","식욕 조절","혈당·혈압·콜레스테롤"],other:1},
- {id:"qol",t:"textarea",l:"체중 외에, 삶의 질에서 개선되기를 원하는 것",h:"예 : 아침에 개운하게 일어나고 싶다 · 식후 졸음이 없어졌으면 한다"}
-]},
-{no:"04",title:"다이어트 이력",intro:"과거의 경험이 지금의 몸을 만든 맥락입니다. 솔직하게 공유해주세요.",items:[
- {id:"diet_tried",t:"radio",l:"지금까지 다이어트를 시도해보신 적이 있으신가요?",o:["없음","있음"]},
- {id:"diet_methods",t:"check",l:"시도해본 방법",h:"위에서 '있음'을 선택하신 경우에만 답해주세요. 해당하는 것을 모두 선택.",o:["한방 치료(한약·약침 등)","양방 치료(식욕억제제·지방분해 주사 등)","식이 조절(간헐적 단식·저탄고지 등)","다이어트 보조식품","운동(PT·필라테스·수영 등)","체형 시술(지방흡입 등)"],other:1},
- {id:"diet_exp",t:"text",l:"과거 다이어트에서 잘 되었던 점과 어려웠던 점",h:"예 : 초반엔 잘 되다가 요요가 왔다 · 식욕 조절이 늘 가장 힘들었다"},
- {id:"weight_now",t:"text",l:"현재 체중(kg)"},
- {id:"height",t:"text",l:"키(cm)"},
- {id:"weight_goal",t:"text",l:"목표 체중(kg)"},
- {id:"weight_min",t:"text",l:"평생 최저 체중(kg)"},
- {id:"weight_prebirth",t:"text",l:"출산 전 체중(kg, 해당 시)"},
- {id:"weight_postbirth",t:"text",l:"출산 후 체중(kg, 해당 시)"},
- {id:"body_part",t:"text",l:"가장 신경 쓰이는 부위",h:"예 : 복부, 허벅지 탄력, 팔뚝 등"}
-]},
-{no:"05",title:"수면 리듬",intro:"수면은 대사와 호르몬의 가장 중요한 기반입니다. 평소 패턴을 솔직하게 알려주세요.",items:[
- {id:"sleep_time",t:"text",l:"평균 취침 시간"},
- {id:"wake_time",t:"text",l:"평균 기상 시간"},
- {id:"sleep_latency",t:"text",l:"잠들기까지 걸리는 시간(분)"},
- {id:"sleep_quality",t:"check",l:"수면의 질",h:"해당하는 것을 모두 선택해주세요.",o:["수면으로 특별한 불편함이 없다","자다가 여러 번 깬다","중간에 깨면 다시 잠들기 어렵다","피곤해도 아침 일정 시간에 저절로 깬다","걱정거리가 있으면 2~3시간 이상 뒤척인다","거의 날을 새우다시피 한다"]},
- {id:"blackout",t:"radio",l:"암막 커튼",o:["있음","없음"]},
- {id:"bedroom_tv",t:"radio",l:"침실 TV",o:["있음","없음"]},
- {id:"sleep_light",t:"radio",l:"취침 시 불",o:["켜고 잠","끄고 잠"]},
- {id:"bedroom_temp",t:"radio",l:"침실 온도",o:["서늘하게","따뜻하게","잘 모름"]},
- {id:"bedroom_humid",t:"radio",l:"침실 습도",o:["건조한 편","적당함","습한 편"]},
- {id:"phone_loc",t:"radio",l:"스마트폰을 주로 어디에 두고 주무시나요?",o:["베개 바로 옆","침대 위 손 닿는 곳","침대에서 멀리","침실 밖"]},
- {id:"sleep_med",t:"radio",l:"수면 보조제나 안정제를 복용하고 계신가요?",o:["없음","가끔 복용","정기적으로 복용 중"]}
-]},
-{no:"06",title:"식사 리듬",intro:"언제, 무엇을, 어떻게 먹는지가 몸의 리듬을 결정합니다.",items:[
- {id:"meal_morning",t:"text",l:"아침 식사 시간"},
- {id:"meal_lunch",t:"text",l:"점심 식사 시간"},
- {id:"meal_dinner",t:"text",l:"저녁 식사 시간"},
- {id:"meal_night",t:"text",l:"야식 시간(있는 경우)"},
- {id:"meal_regular",t:"grid",l:"끼니별 규칙성",rows:["아침","점심","저녁"],cols:["규칙적","불규칙"]},
- {id:"eating_habits",t:"check",l:"식사 습관",h:"해당하는 것을 모두 선택해주세요.",o:["바쁠 때 끼니를 자주 건너뛴다","탄수화물 위주의 식사를 한다(밥·빵·면·과자 등)","국물이나 찌개류를 즐겨 먹는다","과식하는 경향이 있다","폭식 후 죄책감을 느낀 경험이 있다","끼니 사이에 간식을 자주 먹는다","식사 중 물이나 음료를 많이 마신다","특별히 문제가 없다고 생각한다"]},
- {id:"hungry_time",t:"radio",l:"배가 가장 고픈 시간대",o:["아침","점심 이후 오후","저녁","취침 전~새벽"]},
- {id:"missed_meal",t:"radio",l:"끼니를 놓쳤을 때 반응",o:["반드시 무언가 먹어야 불안하다","크게 개의치 않는다","오히려 다음 끼니에 더 많이 먹게 된다"]},
- {id:"eating_speed",t:"radio",l:"식사 속도",o:["매우 빠른 편(5~10분 이내)","보통","천천히 먹는 편"]},
- {id:"appetite",t:"radio",l:"식욕의 강도",o:["먹어도 금방 다시 배고프다","왕성한 편이다","보통이다","적은 편이다","최근 들어 입맛이 많이 떨어졌다"]},
- {id:"alcohol_freq",t:"text",l:"음주 빈도(주 몇 회)"},
- {id:"alcohol_type",t:"radio",l:"주요 주종",o:["소주","맥주","와인","위스키"],other:1},
- {id:"alcohol_amount",t:"text",l:"1회 음주량",h:"예 : 소주 1병"},
- {id:"alcohol_food",t:"radio",l:"음주 시 식사",o:["물만","가벼운 안주","고기류","식욕이 늘어 많이 먹는다"]},
- {id:"coffee_amount",t:"text",l:"하루 커피 섭취량(잔)"},
- {id:"coffee_time",t:"text",l:"주로 마시는 시간"},
- {id:"caffeine",t:"radio",l:"카페인 반응",o:["잘 잠","오후엔 못 잠","심장 두근거림","속 쓰림","커피를 못 마심"]}
-]},
-{no:"07",title:"수분 & 미네랄 리듬",intro:"물을 마시는 방식과 시점도 몸의 균형을 읽는 단서가 됩니다.",items:[
- {id:"water_habit",t:"check",l:"평소 수분 섭취 방식",h:"해당하는 것을 모두 선택해주세요.",o:["식사 중 물이나 음료를 함께 마신다","식전에 물을 마신다","식후에 물을 마신다","식사 시간에는 물을 마시지 않는다","평소에 물을 잘 마시지 않는다"]},
- {id:"urine",t:"radio",l:"소변 색깔",o:["거의 투명","연한 노란색","진한 노란색","주황색 또는 갈색","거품이 섞여 있다"]}
-]},
-{no:"08",title:"몸의 신호",intro:"몸이 보내는 작은 신호들을 함께 살펴봅니다.",items:[
- {id:"temp_energy",t:"check",l:"체온 감각과 에너지 상태",h:"해당하는 것을 모두 선택해주세요.",o:["추위를 많이 탄다","더위를 많이 탄다","손발이 자주 차다","아랫배가 차갑게 느껴진다","체력이 좋은 편이다","쉽게 지치는 편이다","최근 들어 컨디션이 많이 떨어졌다"]},
- {id:"sweat",t:"radio",l:"땀이 나는 패턴",o:["많이 나는 편","보통","거의 나지 않는다","식사 중에 유독 많이 난다","잘 때 많이 난다"]},
- {id:"edema",t:"radio",l:"부종",o:["자주 붓는다","가끔 붓는다","거의 붓지 않는다"]},
- {id:"edema_part",t:"check",l:"주로 붓는 부위",h:"자주·가끔 붓는 경우에만 답해주세요.",o:["얼굴","손","발","전신"]},
- {id:"digestion",t:"radio",l:"소화 상태",o:["소화가 잘 되는 편이다","소화가 잘 안 된다"]},
- {id:"digestion_sym",t:"check",l:"해당 증상",h:"소화가 잘 안 되는 경우에만 답해주세요.",o:["속쓰림","신물","메스꺼움","복통","트림","가스 참"]},
- {id:"bowel_freq",t:"radio",l:"배변 빈도",o:["매일 1회","2~3일에 1회","하루 2~3회"]},
- {id:"stool",t:"radio",l:"변 상태",o:["정상","무른 편","단단한 편"]}
-]},
-{no:"09",title:"여성 건강 리듬",intro:"남성 고객은 건너뛰셔도 됩니다.",items:[
- {id:"cycle",t:"check",l:"생리 주기 관련 해당 항목",h:"해당하는 것을 모두 선택해주세요.",o:["생리 주기가 불규칙한 편이다","생리통이 심한 편이다","생리 전 증후군(PMS)이 있다","특별한 문제가 없다"]}
-]},
-{no:"10",title:"건강 이력",intro:"정확한 진단을 위해 현재와 과거의 건강 상태를 알려주세요.",items:[
- {id:"diseases",t:"check",l:"현재 또는 과거에 진단받은 질환",h:"해당하는 것을 모두 선택해주세요.",o:["없음","고혈압·심혈관 질환","당뇨·공복혈당장애","고지혈증","갑상선 질환","위염·역류성 식도염","자궁·난소 질환","불면증","우울증·불안증","자가면역 질환(아토피·건선 등)","신장 질환"],other:1},
- {id:"surgery",t:"text",l:"수술 이력",h:"수술 이력이 있는 경우에만 적어주세요."},
- {id:"meds",t:"check",l:"현재 복용 중인 약이나 보조제",h:"해당하는 것을 모두 선택해주세요.",o:["없음","건강보조식품(홍삼·비타민·유산균 등)","피임약·피임 시술","수면제·신경안정제·항우울제","알레르기 치료약","스테로이드제"],other:1},
- {id:"allergy",t:"radio",l:"음식 알레르기",o:["없음","있음"]},
- {id:"allergy_detail",t:"text",l:"알레르기 상세",h:"알레르기가 있는 경우에만 적어주세요."},
- {id:"job",t:"radio",l:"직업 또는 주요 생활 패턴",o:["주로 앉아서 일하는 사무직","신체 활동이 많은 직종","2~3교대 근무","재택근무·전업주부","학생"],other:1},
- {id:"exercise",t:"radio",l:"규칙적으로 하는 운동",o:["없음","있음"]},
- {id:"exercise_detail",t:"text",l:"운동 상세",h:"운동을 하는 경우 종류·주당 횟수·1회 시간을 적어주세요."}
-]},
-{no:"11",title:"가족력",items:[
- {id:"family",t:"radio",l:"가족 중 비만이거나 대사 관련 질환을 앓고 있는 분이 있으신가요?",o:["없음","있음"]},
- {id:"family_detail",t:"text",l:"가족력 상세",h:"있는 경우 관계와 질환을 적어주세요."}
-]},
-{no:"12",title:"마지막 질문",items:[
- {id:"final_note",t:"textarea",l:"오늘 처음 상담에서 꼭 이야기 나누고 싶은 것이 있다면 자유롭게 적어주세요.",h:"걱정, 궁금증, 기대, 두려움 모두 환영합니다."}
-]}
-];
+const SECTIONS=[{no:"01",title:"기본 정보",ey:"Basic Information",items:[{id:"name",t:"text",l:"성함",req:1},{id:"rrn",t:"text",l:"주민등록번호",req:1,h:"원활한 상담과 본인확인을 위해서 뒷번호까지 작성해주세요. ( '-' 빼고 숫자만 )"},{id:"phone",t:"text",l:"연락처",req:1},{id:"address",t:"text",l:"주소"},{id:"gender",t:"radio",l:"성별",req:1,o:["여성","남성"]},{id:"birth_count",t:"radio",l:"출산 경험",o:["없음","1회","2회","3회 이상"]},{id:"referral",t:"radio",l:"내원 경로",h:"어떻게 저희를 알게 되셨나요?",o:["지인 소개","인터넷 검색","SNS (인스타그램·블로그)"],other:1},{id:"referrer",t:"text",l:"소개해주신 분",h:"지인 소개로 오신 경우에만 적어주세요."}]},{no:"02",title:"개인정보 동의",ey:"Privacy Consent",intro:"본 의원은 고객의 개인 정보를 소중히 여기며, 관련 법률을 철저히 준수합니다. 수집된 정보(성명, 연락처, 생년월일, 주소)는 맞춤 진료 및 예약 안내 목적에 한해 사용되며, 제3자에게 제공되지 않습니다.",items:[{id:"privacy",t:"radio",l:"개인정보 수집 및 활용에 동의합니다",req:1,o:["동의합니다"]}]},{no:"03",title:"몸의 목표와 기대",ey:"Goals & Expectations",intro:"이 설문에서 가장 중요한 부분입니다. 원하시는 변화를 있는 그대로 말씀해주세요.",items:[{id:"visit_reason",t:"textarea",l:"지금 이 클리닉을 찾아오신 가장 큰 이유는 무엇인가요?",req:1},{id:"three_month",t:"textarea",l:"3개월 후, 어떤 몸 상태가 되어 있기를 바라시나요?",req:1,h:"체중 숫자보다, 어떻게 느끼고 싶은지를 중심으로 적어주세요."},{id:"concerns",t:"check",l:"현재 가장 불편하거나 신경 쓰이는 부분",h:"해당하는 것을 모두 선택해주세요.",o:["체중 및 체형","만성 피로, 무기력함","수면의 질","소화·장 건강","부종","호르몬·생리 주기","피부 컨디션","식욕 조절","혈당·혈압·콜레스테롤"],other:1},{id:"qol",t:"textarea",l:"체중 외에, 삶의 질에서 개선되기를 원하는 것",h:"예 : 아침에 개운하게 일어나고 싶다 · 식후 졸음이 없어졌으면 한다"}]},{no:"04",title:"다이어트 이력",ey:"Diet History",intro:"과거의 경험이 지금의 몸을 만든 맥락입니다. 솔직하게 공유해주세요.",items:[{id:"diet_tried",t:"radio",l:"지금까지 다이어트를 시도해보신 적이 있으신가요?",o:["없음","있음"]},{id:"diet_methods",t:"check",l:"시도해본 방법",h:"위에서 '있음'을 선택하신 경우에만 답해주세요. 해당하는 것을 모두 선택.",o:["한방 치료(한약·약침 등)","양방 치료(식욕억제제·지방분해 주사 등)","식이 조절(간헐적 단식·저탄고지 등)","다이어트 보조식품","운동(PT·필라테스·수영 등)","체형 시술(지방흡입 등)"],other:1},{id:"diet_exp",t:"text",l:"과거 다이어트에서 잘 되었던 점과 어려웠던 점",h:"예 : 초반엔 잘 되다가 요요가 왔다 · 식욕 조절이 늘 가장 힘들었다"},{id:"weight_now",t:"text",l:"현재 체중(kg)"},{id:"height",t:"text",l:"키(cm)"},{id:"weight_goal",t:"text",l:"목표 체중(kg)"},{id:"weight_min",t:"text",l:"평생 최저 체중(kg)"},{id:"weight_prebirth",t:"text",l:"출산 전 체중(kg, 해당 시)"},{id:"weight_postbirth",t:"text",l:"출산 후 체중(kg, 해당 시)"},{id:"body_part",t:"text",l:"가장 신경 쓰이는 부위",h:"예 : 복부, 허벅지 탄력, 팔뚝 등"}]},{no:"05",title:"수면 리듬",ey:"Sleep Rhythm",intro:"수면은 대사와 호르몬의 가장 중요한 기반입니다. 평소 패턴을 솔직하게 알려주세요.",items:[{id:"sleep_time",t:"text",l:"평균 취침 시간"},{id:"wake_time",t:"text",l:"평균 기상 시간"},{id:"sleep_latency",t:"text",l:"잠들기까지 걸리는 시간(분)"},{id:"sleep_quality",t:"check",l:"수면의 질",h:"해당하는 것을 모두 선택해주세요.",o:["수면으로 특별한 불편함이 없다","자다가 여러 번 깬다","중간에 깨면 다시 잠들기 어렵다","피곤해도 아침 일정 시간에 저절로 깬다","걱정거리가 있으면 2~3시간 이상 뒤척인다","거의 날을 새우다시피 한다"]},{id:"blackout",t:"radio",l:"암막 커튼",o:["있음","없음"]},{id:"bedroom_tv",t:"radio",l:"침실 TV",o:["있음","없음"]},{id:"sleep_light",t:"radio",l:"취침 시 불",o:["켜고 잠","끄고 잠"]},{id:"bedroom_temp",t:"radio",l:"침실 온도",o:["서늘하게","따뜻하게","잘 모름"]},{id:"bedroom_humid",t:"radio",l:"침실 습도",o:["건조한 편","적당함","습한 편"]},{id:"phone_loc",t:"radio",l:"스마트폰을 주로 어디에 두고 주무시나요?",o:["베개 바로 옆","침대 위 손 닿는 곳","침대에서 멀리","침실 밖"]},{id:"sleep_med",t:"radio",l:"수면 보조제나 안정제를 복용하고 계신가요?",o:["없음","가끔 복용","정기적으로 복용 중"]}]},{no:"06",title:"식사 리듬",ey:"Meal Rhythm",intro:"언제, 무엇을, 어떻게 먹는지가 몸의 리듬을 결정합니다.",items:[{id:"meal_morning",t:"text",l:"아침 식사 시간"},{id:"meal_lunch",t:"text",l:"점심 식사 시간"},{id:"meal_dinner",t:"text",l:"저녁 식사 시간"},{id:"meal_night",t:"text",l:"야식 시간(있는 경우)"},{id:"meal_regular",t:"grid",l:"끼니별 규칙성",rows:["아침","점심","저녁"],cols:["규칙적","불규칙"]},{id:"eating_habits",t:"check",l:"식사 습관",h:"해당하는 것을 모두 선택해주세요.",o:["바쁠 때 끼니를 자주 건너뛴다","탄수화물 위주의 식사를 한다(밥·빵·면·과자 등)","국물이나 찌개류를 즐겨 먹는다","과식하는 경향이 있다","폭식 후 죄책감을 느낀 경험이 있다","끼니 사이에 간식을 자주 먹는다","식사 중 물이나 음료를 많이 마신다","특별히 문제가 없다고 생각한다"]},{id:"hungry_time",t:"radio",l:"배가 가장 고픈 시간대",o:["아침","점심 이후 오후","저녁","취침 전~새벽"]},{id:"missed_meal",t:"radio",l:"끼니를 놓쳤을 때 반응",o:["반드시 무언가 먹어야 불안하다","크게 개의치 않는다","오히려 다음 끼니에 더 많이 먹게 된다"]},{id:"eating_speed",t:"radio",l:"식사 속도",o:["매우 빠른 편(5~10분 이내)","보통","천천히 먹는 편"]},{id:"appetite",t:"radio",l:"식욕의 강도",o:["먹어도 금방 다시 배고프다","왕성한 편이다","보통이다","적은 편이다","최근 들어 입맛이 많이 떨어졌다"]},{id:"alcohol_freq",t:"text",l:"음주 빈도(주 몇 회)"},{id:"alcohol_type",t:"radio",l:"주요 주종",o:["소주","맥주","와인","위스키"],other:1},{id:"alcohol_amount",t:"text",l:"1회 음주량",h:"예 : 소주 1병"},{id:"alcohol_food",t:"radio",l:"음주 시 식사",o:["물만","가벼운 안주","고기류","식욕이 늘어 많이 먹는다"]},{id:"coffee_amount",t:"text",l:"하루 커피 섭취량(잔)"},{id:"coffee_time",t:"text",l:"주로 마시는 시간"},{id:"caffeine",t:"radio",l:"카페인 반응",o:["잘 잠","오후엔 못 잠","심장 두근거림","속 쓰림","커피를 못 마심"]}]},{no:"07",title:"수분 & 미네랄 리듬",ey:"Water & Mineral",intro:"물을 마시는 방식과 시점도 몸의 균형을 읽는 단서가 됩니다.",items:[{id:"water_habit",t:"check",l:"평소 수분 섭취 방식",h:"해당하는 것을 모두 선택해주세요.",o:["식사 중 물이나 음료를 함께 마신다","식전에 물을 마신다","식후에 물을 마신다","식사 시간에는 물을 마시지 않는다","평소에 물을 잘 마시지 않는다"]},{id:"urine",t:"radio",l:"소변 색깔",o:["거의 투명","연한 노란색","진한 노란색","주황색 또는 갈색","거품이 섞여 있다"]}]},{no:"08",title:"몸의 신호",ey:"Body Signals",intro:"몸이 보내는 작은 신호들을 함께 살펴봅니다.",items:[{id:"temp_energy",t:"check",l:"체온 감각과 에너지 상태",h:"해당하는 것을 모두 선택해주세요.",o:["추위를 많이 탄다","더위를 많이 탄다","손발이 자주 차다","아랫배가 차갑게 느껴진다","체력이 좋은 편이다","쉽게 지치는 편이다","최근 들어 컨디션이 많이 떨어졌다"]},{id:"sweat",t:"radio",l:"땀이 나는 패턴",o:["많이 나는 편","보통","거의 나지 않는다","식사 중에 유독 많이 난다","잘 때 많이 난다"]},{id:"edema",t:"radio",l:"부종",o:["자주 붓는다","가끔 붓는다","거의 붓지 않는다"]},{id:"edema_part",t:"check",l:"주로 붓는 부위",h:"자주·가끔 붓는 경우에만 답해주세요.",o:["얼굴","손","발","전신"]},{id:"digestion",t:"radio",l:"소화 상태",o:["소화가 잘 되는 편이다","소화가 잘 안 된다"]},{id:"digestion_sym",t:"check",l:"해당 증상",h:"소화가 잘 안 되는 경우에만 답해주세요.",o:["속쓰림","신물","메스꺼움","복통","트림","가스 참"]},{id:"bowel_freq",t:"radio",l:"배변 빈도",o:["매일 1회","2~3일에 1회","하루 2~3회"]},{id:"stool",t:"radio",l:"변 상태",o:["정상","무른 편","단단한 편"]}]},{no:"09",title:"여성 건강 리듬",ey:"Women's Rhythm",intro:"남성 고객은 건너뛰셔도 됩니다.",items:[{id:"cycle",t:"check",l:"생리 주기 관련 해당 항목",h:"해당하는 것을 모두 선택해주세요.",o:["생리 주기가 불규칙한 편이다","생리통이 심한 편이다","생리 전 증후군(PMS)이 있다","특별한 문제가 없다"]}]},{no:"10",title:"건강 이력",ey:"Medical History",intro:"정확한 진단을 위해 현재와 과거의 건강 상태를 알려주세요.",items:[{id:"diseases",t:"check",l:"현재 또는 과거에 진단받은 질환",h:"해당하는 것을 모두 선택해주세요.",o:["없음","고혈압·심혈관 질환","당뇨·공복혈당장애","고지혈증","갑상선 질환","위염·역류성 식도염","자궁·난소 질환","불면증","우울증·불안증","자가면역 질환(아토피·건선 등)","신장 질환"],other:1},{id:"surgery",t:"text",l:"수술 이력",h:"수술 이력이 있는 경우에만 적어주세요."},{id:"meds",t:"check",l:"현재 복용 중인 약이나 보조제",h:"해당하는 것을 모두 선택해주세요.",o:["없음","건강보조식품(홍삼·비타민·유산균 등)","피임약·피임 시술","수면제·신경안정제·항우울제","알레르기 치료약","스테로이드제"],other:1},{id:"allergy",t:"radio",l:"음식 알레르기",o:["없음","있음"]},{id:"allergy_detail",t:"text",l:"알레르기 상세",h:"알레르기가 있는 경우에만 적어주세요."},{id:"job",t:"radio",l:"직업 또는 주요 생활 패턴",o:["주로 앉아서 일하는 사무직","신체 활동이 많은 직종","2~3교대 근무","재택근무·전업주부","학생"],other:1},{id:"exercise",t:"radio",l:"규칙적으로 하는 운동",o:["없음","있음"]},{id:"exercise_detail",t:"text",l:"운동 상세",h:"운동을 하는 경우 종류·주당 횟수·1회 시간을 적어주세요."}]},{no:"11",title:"가족력",ey:"Family History",items:[{id:"family",t:"radio",l:"가족 중 비만이거나 대사 관련 질환을 앓고 있는 분이 있으신가요?",o:["없음","있음"]},{id:"family_detail",t:"text",l:"가족력 상세",h:"있는 경우 관계와 질환을 적어주세요."}]},{no:"12",title:"마지막 질문",ey:"One Last Thing",items:[{id:"final_note",t:"textarea",l:"오늘 처음 상담에서 꼭 이야기 나누고 싶은 것이 있다면 자유롭게 적어주세요.",h:"걱정, 궁금증, 기대, 두려움 모두 환영합니다."}]}];
 
-/* ============================================================ 렌더링 ============================================================ */
-const form = document.getElementById("form");
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* ============================================================
+   렌더링 — 기존 renderItem 완전 보존
+============================================================ */
+const form=document.getElementById("form");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function renderItem(it){
-  let body = "";
-  if(it.t==="text") body = `<input type="text" name="${it.id}" placeholder="내 답변">`;
-  if(it.t==="textarea") body = `<textarea name="${it.id}" rows="2" placeholder="내 답변"></textarea>`;
+  let body="";
+  if(it.t==="text") body=`<input type="text" name="${it.id}" placeholder="내 답변">`;
+  if(it.t==="textarea") body=`<textarea name="${it.id}" rows="2" placeholder="내 답변"></textarea>`;
   if(it.t==="radio"||it.t==="check"){
-    const type = it.t==="radio"?"radio":"checkbox";
-    body = it.o.map(o=>`
-      <label class="opt ${it.t}"><input type="${type}" name="${it.id}" value="${esc(o)}"><span class="mark"></span><span>${esc(o)}</span></label>`).join("");
-    if(it.other) body += `
-      <label class="opt ${it.t}"><input type="${type}" name="${it.id}" value="__other__"><span class="mark"></span><span>기타:</span><input type="text" class="opt-other-input" name="${it.id}__other" placeholder=""></label>`;
+    const type=it.t==="radio"?"radio":"checkbox";
+    body=it.o.map(o=>`<label class="opt ${it.t}"><input type="${type}" name="${it.id}" value="${esc(o)}"><span class="mark"></span><span>${esc(o)}</span></label>`).join("");
+    if(it.other) body+=`<label class="opt ${it.t}"><input type="${type}" name="${it.id}" value="__other__"><span class="mark"></span><span>기타:</span><input type="text" class="opt-other-input" name="${it.id}__other" placeholder=""></label>`;
   }
   if(it.t==="grid"){
-    body = `<table class="grid"><thead><tr><th></th>${it.cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>` +
-      it.rows.map(r=>`<tr><td>${esc(r)}</td>${it.cols.map(c=>`
-        <td><label class="opt radio"><input type="radio" name="${it.id}__${esc(r)}" value="${esc(c)}"><span class="mark"></span></label></td>`).join("")}</tr>`).join("") +
+    body=`<table class="grid"><thead><tr><th></th>${it.cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>`+
+      it.rows.map(r=>`<tr><td>${esc(r)}</td>${it.cols.map(c=>`<td><label class="opt radio"><input type="radio" name="${it.id}__${esc(r)}" value="${esc(c)}"><span class="mark"></span></label></td>`).join("")}</tr>`).join("")+
       `</tbody></table>`;
   }
   return `<div class="q" data-id="${it.id}" data-req="${it.req?1:0}" data-type="${it.t}">
@@ -299,124 +719,153 @@ function renderItem(it){
 }
 
 SECTIONS.forEach((s,i)=>{
-  const sec = document.createElement("section");
-  sec.className = "section";
-  sec.dataset.idx = i;
-  sec.innerHTML = `
-    <div class="section-label">No.${s.no}</div>
-    <h2 class="section-title">${esc(s.title)}</h2>
-    <div class="section-rule"></div>
-    ${s.intro?`<p class="section-intro">${esc(s.intro)}</p>`:""}
-    ${s.items.map(renderItem).join("")}
+  const sec=document.createElement("section");
+  sec.className="section";
+  sec.dataset.idx=i;
+  sec.innerHTML=`${s.items.map(renderItem).join("")}
     <div class="nav">
-      ${i>0?`<button type="button" class="btn-back">뒤로</button>`:""}
+      ${i>0?`<button type="button" class="btn-back">이전</button>`:""}
       <button type="button" class="btn-next">${i===SECTIONS.length-1?"제출하기":"다음"}</button>
     </div>`;
   form.appendChild(sec);
 });
 
-/* ============================================================ 페이지 이동 · 검증 ============================================================ */
-let cur = 0;
-const progress = document.getElementById("progress");
+/* ============================================================
+   aside 업데이트
+============================================================ */
+const asideNo=document.getElementById("asideNo");
+const asideEy=document.getElementById("asideEy");
+const asideTitle=document.getElementById("asideTitle");
+const asideIntro=document.getElementById("asideIntro");
+const asideDots=document.getElementById("asideDots");
+const asideProgress=document.getElementById("asideProgress");
+
+function buildDots(){
+  asideDots.innerHTML=SECTIONS.map((_,i)=>`<div class="aside-dot" id="dot${i}"></div>`).join("");
+}
+
+function updateAside(i){
+  const s=SECTIONS[i];
+  asideNo.textContent=`No. ${s.no}`;
+  asideEy.textContent=s.ey||"";
+  asideTitle.textContent=s.title;
+  asideIntro.textContent=s.intro||"";
+  asideProgress.textContent=`${i+1} / ${SECTIONS.length}`;
+  SECTIONS.forEach((_,k)=>{
+    const d=document.getElementById(`dot${k}`);
+    d.className="aside-dot"+(k<i?" done":k===i?" cur":"");
+  });
+}
+
+/* ============================================================
+   페이지 이동 · 검증
+============================================================ */
+let cur=0;
 
 function show(i){
-  cur = i;
+  cur=i;
   document.querySelectorAll(".section").forEach((s,k)=>s.classList.toggle("active",k===i));
-  progress.style.display = "block";
-  document.getElementById("head").style.display = i===0 ? "" : "none";
-  document.getElementById("pNo").textContent = `No.${SECTIONS[i].no} — ${i+1} / ${SECTIONS.length}`;
-  document.getElementById("pTitle").textContent = SECTIONS[i].title;
-  document.getElementById("pBar").style.width = ((i+1)/SECTIONS.length*100)+"%";
+  updateAside(i);
+  document.getElementById("form").scrollTop=0;
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
 function validate(secEl){
-  let ok = true;
+  let ok=true;
   secEl.querySelectorAll('.q[data-req="1"]').forEach(q=>{
-    const id = q.dataset.id, t = q.dataset.type;
-    let filled = false;
-    if(t==="text"||t==="textarea") filled = q.querySelector(`[name="${id}"]`).value.trim() !== "";
-    else filled = !!q.querySelector(`input[name="${id}"]:checked`);
-    q.classList.toggle("q-error", !filled);
-    if(!filled) ok = false;
+    const id=q.dataset.id,t=q.dataset.type;
+    let filled=false;
+    if(t==="text"||t==="textarea") filled=q.querySelector(`[name="${id}"]`).value.trim()!=="";
+    else filled=!!q.querySelector(`input[name="${id}"]:checked`);
+    q.classList.toggle("q-error",!filled);
+    if(!filled) ok=false;
   });
   if(!ok) secEl.querySelector(".q-error").scrollIntoView({behavior:"smooth",block:"center"});
   return ok;
 }
 
-form.addEventListener("click", e=>{
+form.addEventListener("click",e=>{
   if(e.target.classList.contains("btn-back")) show(cur-1);
   if(e.target.classList.contains("btn-next")){
-    const secEl = document.querySelector(`.section[data-idx="${cur}"]`);
+    const secEl=document.querySelector(`.section[data-idx="${cur}"]`);
     if(!validate(secEl)) return;
-    if(cur < SECTIONS.length-1) show(cur+1);
+    if(cur<SECTIONS.length-1) show(cur+1);
     else submit(e.target);
   }
 });
 
-/* "기타" 입력란 클릭 시 해당 옵션 자동 선택 */
-form.addEventListener("focusin", e=>{
+form.addEventListener("focusin",e=>{
   if(e.target.classList.contains("opt-other-input")){
-    const box = e.target.closest(".opt").querySelector("input[value='__other__']");
-    if(box) box.checked = true;
+    const box=e.target.closest(".opt").querySelector("input[value='__other__']");
+    if(box) box.checked=true;
   }
 });
 
-/* ============================================================ 수집 · 제출 ============================================================ */
+/* ============================================================
+   수집 · 제출 — 기존 완전 보존
+============================================================ */
 function collect(){
-  const a = {};
+  const a={};
   SECTIONS.forEach(s=>s.items.forEach(it=>{
     if(it.t==="text"||it.t==="textarea"){
-      a[it.id] = document.querySelector(`[name="${it.id}"]`).value.trim();
-    } else if(it.t==="radio"){
-      const v = document.querySelector(`input[name="${it.id}"]:checked`);
-      a[it.id] = v ? (v.value==="__other__" ? "기타: "+document.querySelector(`[name="${it.id}__other"]`).value.trim() : v.value) : "";
-    } else if(it.t==="check"){
-      a[it.id] = [...document.querySelectorAll(`input[name="${it.id}"]:checked`)]
-        .map(v=>v.value==="__other__" ? "기타: "+document.querySelector(`[name="${it.id}__other"]`).value.trim() : v.value);
-    } else if(it.t==="grid"){
-      const g = {};
-      it.rows.forEach(r=>{
-        const v = document.querySelector(`input[name="${it.id}__${r}"]:checked`);
-        g[r] = v ? v.value : "";
-      });
-      a[it.id] = g;
+      a[it.id]=document.querySelector(`[name="${it.id}"]`).value.trim();
+    }else if(it.t==="radio"){
+      const v=document.querySelector(`input[name="${it.id}"]:checked`);
+      a[it.id]=v?(v.value==="__other__"?"기타: "+document.querySelector(`[name="${it.id}__other"]`).value.trim():v.value):"";
+    }else if(it.t==="check"){
+      a[it.id]=[...document.querySelectorAll(`input[name="${it.id}"]:checked`)]
+        .map(v=>v.value==="__other__"?"기타: "+document.querySelector(`[name="${it.id}__other"]`).value.trim():v.value);
+    }else if(it.t==="grid"){
+      const g={};
+      it.rows.forEach(r=>{const v=document.querySelector(`input[name="${it.id}__${r}"]:checked`);g[r]=v?v.value:"";});
+      a[it.id]=g;
     }
   }));
   return a;
 }
 
 async function submit(btn){
-  btn.disabled = true; btn.textContent = "전송 중…";
-  const answers = collect();
-  const payload = {name:answers.name, phone:answers.phone, answers};
+  btn.disabled=true;btn.textContent="전송 중…";
+  const answers=collect();
+  const payload={name:answers.name,phone:answers.phone,answers};
   try{
-    if(SUPABASE_URL && SUPABASE_ANON_KEY){
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`,{
+    if(SUPABASE_URL&&SUPABASE_ANON_KEY){
+      const res=await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`,{
         method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "apikey":SUPABASE_ANON_KEY,
-          "Authorization":`Bearer ${SUPABASE_ANON_KEY}`,
-          "Prefer":"return=minimal"
-        },
+        headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":`Bearer ${SUPABASE_ANON_KEY}`,"Prefer":"return=minimal"},
         body:JSON.stringify(payload)
       });
       if(!res.ok) throw new Error("저장 실패 ("+res.status+")");
-    } else {
-      console.log("[데모 모드] 수집된 응답:", payload);
+    }else{
+      console.log("[데모 모드] 수집된 응답:",payload);
     }
-    document.getElementById("form").style.display = "none";
-    document.getElementById("progress").style.display = "none";
-    document.getElementById("done").style.display = "block";
+    /* 완료 화면 */
+    document.getElementById("atelier").style.display="none";
+    const dw=document.getElementById("doneWrap");
+    dw.style.display="flex";
+    /* 완료 dots */
+    document.getElementById("doneDots").innerHTML=
+      SECTIONS.map((_,i)=>`<div class="aside-dot done"></div>`).join("");
     window.scrollTo({top:0});
   }catch(err){
-    btn.disabled = false; btn.textContent = "제출하기";
+    btn.disabled=false;btn.textContent="제출하기";
     alert("전송 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.\n"+err.message);
   }
 }
 
-show(0);
+/* ============================================================
+   시작
+============================================================ */
+buildDots();
+
+document.getElementById("startBtn").addEventListener("click",()=>{
+  document.getElementById("cover").style.display="none";
+  document.getElementById("atelier").style.display="flex";
+  show(0);
+});
+
+/* 커버 먼저 보여주기 */
+document.getElementById("cover").style.display="block";
 </script>
 </body>
 </html>
