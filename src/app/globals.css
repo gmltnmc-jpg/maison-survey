@@ -1,0 +1,251 @@
+/* Maison de Balance — brand tokens (ported from the original editorial design).
+   Visual design is intentionally not finalized in this phase. */
+:root {
+  --cream: #f5f0e6;
+  --paper: #fdfbf7;
+  --ink: #1a1714;
+  --ink-mid: #2e2b26;
+  --ink-soft: #4a4540;
+  --grey: #8a8278;
+  --gold: #b09a6a;
+  --gold-soft: #d4c49e;
+  --line: #ddd5c4;
+  --error: #9c4a35;
+  --serif: "Noto Serif KR", serif;
+  --sans: "Noto Sans KR", system-ui, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 300;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+.brand {
+  font-size: 11px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.sec-no {
+  font-style: italic;
+  font-size: 28px;
+  color: var(--gold-soft);
+}
+
+.sec-title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 24px;
+  letter-spacing: 0.03em;
+  margin: 6px 0 6px;
+}
+
+.sec-intro {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.progress {
+  font-size: 12px;
+  color: var(--grey);
+  margin-bottom: 28px;
+}
+
+.q {
+  border-top: 1px solid var(--line);
+  padding: 22px 0;
+}
+.q:first-of-type {
+  border-top: none;
+}
+.q-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.q-req {
+  color: var(--gold);
+  margin-left: 4px;
+}
+.q-help {
+  font-size: 12px;
+  color: var(--grey);
+  margin-top: 4px;
+}
+.q-body {
+  margin-top: 14px;
+}
+.q-err {
+  font-size: 12px;
+  color: var(--error);
+  margin-top: 8px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="time"],
+textarea {
+  width: 100%;
+  max-width: 420px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  padding: 10px 0;
+  font: 300 14px var(--sans);
+  color: var(--ink);
+}
+textarea {
+  max-width: 100%;
+  min-height: 64px;
+  resize: vertical;
+}
+input:focus,
+textarea:focus {
+  outline: none;
+  border-bottom-color: var(--gold);
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  font-size: 14px;
+}
+.opt input {
+  accent-color: var(--gold);
+  width: 16px;
+  height: 16px;
+}
+.other-input {
+  margin-left: 8px;
+  max-width: 220px;
+}
+
+table.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.grid th {
+  font-weight: 400;
+  color: var(--grey);
+  font-size: 11px;
+  padding: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+table.grid td {
+  padding: 10px 6px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+table.grid td:first-child {
+  text-align: left;
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 36px;
+}
+button {
+  font-family: var(--sans);
+  cursor: pointer;
+  letter-spacing: 0.16em;
+  border-radius: 0;
+  transition: all 0.2s;
+}
+.btn-next {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--cream);
+  padding: 13px 44px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.btn-next:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.btn-next:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+.btn-back {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 13px 28px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.cover {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+.cover-title {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(30px, 6vw, 48px);
+  line-height: 1.2;
+}
+.cover-title em {
+  font-style: normal;
+  color: var(--gold);
+}
+.cover-intro {
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.cover-intro p + p {
+  margin-top: 12px;
+}
+.cover-start {
+  margin-top: 40px;
+}
+
+.done {
+  text-align: center;
+  padding: 120px 24px;
+}
+.done-title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 26px;
+  line-height: 1.6;
+}
+.done-text {
+  margin-top: 22px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.form-error {
+  color: var(--error);
+  font-size: 13px;
+  margin-top: 16px;
+}
