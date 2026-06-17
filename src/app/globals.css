@@ -11,8 +11,8 @@
   --gold-soft: #d4c49e;
   --line: #ddd5c4;
   --error: #9c4a35;
-  --serif: "Noto Serif KR", serif;
-  --sans: "Noto Sans KR", system-ui, sans-serif;
+  --serif: var(--font-serif), serif;
+  --sans: var(--font-sans), system-ui, sans-serif;
 }
 
 * {
@@ -248,4 +248,50 @@ button {
   color: var(--error);
   font-size: 13px;
   margin-top: 16px;
+}
+
+.time-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+}
+.time-wrap input {
+  max-width: none;
+  flex: 1;
+}
+.time-clear {
+  border: none;
+  background: none;
+  color: var(--grey);
+  font-size: 18px;
+  padding: 0 4px;
+  line-height: 1;
+  cursor: pointer;
+  letter-spacing: 0;
+}
+.time-clear:hover {
+  color: var(--ink);
+}
+
+.sleep-dial {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sleep-dial select {
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  padding: 10px 4px;
+  font: 300 14px var(--sans);
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: center;
+}
+.sleep-dial select:focus {
+  outline: none;
+  border-bottom-color: var(--gold);
 }

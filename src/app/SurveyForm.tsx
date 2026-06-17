@@ -221,10 +221,43 @@ function Question({
       </div>
       {q.helperText && <div className="q-help">{q.helperText}</div>}
       <div className="q-body">
-        {(q.type === "short_text" || q.type === "number" || q.type === "time") && (
+        {q.id === "sleep_latency_min" && (
+          <SleepLatencyDial value={value} onChange={(v) => onValue(q.id, String(v))} />
+        )}
+
+        {q.type === "time" && (
+          <>
+            {q.id === "meal_time_latenight" && (
+              <label className="opt">
+                <input
+                  type="checkbox"
+                  checked={value === "야식 없음"}
+                  onChange={(e) => onValue(q.id, e.target.checked ? "야식 없음" : "")}
+                />
+                <span>야식 안 함</span>
+              </label>
+            )}
+            {value !== "야식 없음" && (
+              <div className="time-wrap">
+                <input
+                  type="time"
+                  value={typeof value === "string" && value !== "야식 없음" ? value : ""}
+                  onChange={(e) => onValue(q.id, e.target.value)}
+                />
+                {typeof value === "string" && value !== "" && value !== "야식 없음" && (
+                  <button type="button" className="time-clear" onClick={() => onValue(q.id, "")}>
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {(q.type === "short_text" || (q.type === "number" && q.id !== "sleep_latency_min")) && (
           <input
-            type={q.type === "number" ? "number" : q.type === "time" ? "time" : "text"}
-            value={typeof value === "string" ? value : ""}
+            type={q.type === "number" ? "number" : "text"}
+            value={typeof value === "string" ? value : typeof value === "number" ? String(value) : ""}
             placeholder="내 답변"
             onChange={(e) => onValue(q.id, e.target.value)}
           />
@@ -349,6 +382,38 @@ function Question({
         )}
       </div>
       {error && <div className="q-err">{error}</div>}
+    </div>
+  );
+}
+
+function SleepLatencyDial({
+  value,
+  onChange,
+}: {
+  value: AnswerValue;
+  onChange: (v: number) => void;
+}) {
+  const totalMin = typeof value === "string" && value !== "" ? parseInt(value, 10) || 0 : 0;
+  const hrs = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+  return (
+    <div className="sleep-dial">
+      <select
+        value={hrs}
+        onChange={(e) => onChange(Number(e.target.value) * 60 + mins)}
+      >
+        {[0, 1, 2, 3, 4, 5].map((h) => (
+          <option key={h} value={h}>{h}시간</option>
+        ))}
+      </select>
+      <select
+        value={mins}
+        onChange={(e) => onChange(hrs * 60 + Number(e.target.value))}
+      >
+        {[0, 15, 30, 45].map((m) => (
+          <option key={m} value={m}>{m}분</option>
+        ))}
+      </select>
     </div>
   );
 }
