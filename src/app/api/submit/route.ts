@@ -6,6 +6,7 @@ import { validateAnswers, normalizeRrn } from "@/lib/survey/validation";
 import { pruneHiddenAnswers } from "@/lib/survey/conditions";
 import { deriveFields } from "@/lib/survey/derive";
 import { computeRiskFlags } from "@/lib/survey/riskFlags";
+import type { RiskFlag } from "@/lib/survey/riskFlags";
 import type { Answers } from "@/lib/survey/types";
 
 export const runtime = "nodejs";
@@ -55,8 +56,29 @@ export async function POST(request: Request) {
   const prunedAnswers = pruneHiddenAnswers(answers);
   delete prunedAnswers["basic_rrn"];
 
-  const derived = deriveFields(prunedAnswers);
-  const riskFlags = computeRiskFlags(prunedAnswers);
+  // raw_answers → 구조화 컬럼 파싱. 파싱 실패가 제출 전체를 막지 않도록
+  // try/catch로 감싸고, 실패 시 해당 컬럼은 null/빈 배열로 저장한다.
+  let derived;
+  try {
+    derived = deriveFields(prunedAnswers);
+  } catch {
+    derived = {
+      primary_goal_text: null,
+      chief_complaints: [],
+      current_weight: null,
+      height: null,
+      target_weight: null,
+      bmi: null,
+    };
+  }
+
+  let riskFlags: RiskFlag[];
+  try {
+    riskFlags = computeRiskFlags(prunedAnswers);
+  } catch {
+    riskFlags = [];
+  }
+
   const consented = prunedAnswers["consent_agree"] === "동의합니다";
 
   const supabase = createSupabaseAdminClient();
@@ -96,6 +118,7 @@ export async function POST(request: Request) {
     target_weight: derived.target_weight,
     bmi: derived.bmi,
     risk_flags: riskFlags,
+    submitted_at: new Date().toISOString(),
   });
 
   if (responseError) {
