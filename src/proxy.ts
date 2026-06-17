@@ -30,13 +30,25 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isLoginPage = request.nextUrl.pathname === "/admin/login";
+  const { pathname } = request.nextUrl;
+  const isLoginPage = pathname === "/admin/login";
 
-  if (!user && !isLoginPage) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+  if (!user) {
+    if (isLoginPage) return response;
+    return NextResponse.redirect(
+      new URL("/admin/login?expired=1", request.url),
+    );
   }
 
-  if (user && isLoginPage) {
+  const isAdmin = user.app_metadata?.role === "admin";
+
+  if (!isAdmin) {
+    return NextResponse.redirect(
+      new URL("/admin/login?unauthorized=1", request.url),
+    );
+  }
+
+  if (isLoginPage) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
