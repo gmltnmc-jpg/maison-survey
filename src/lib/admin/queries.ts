@@ -1,6 +1,17 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { maskPhone } from "@/lib/admin/utils";
 import type { PatientRow, PatientInfo } from "@/app/admin/actions";
+
+function maskPatients(
+  patients: PatientInfo | PatientInfo[] | null,
+): PatientInfo | PatientInfo[] | null {
+  if (!patients) return null;
+  if (Array.isArray(patients)) {
+    return patients.map((p) => ({ ...p, phone: p.phone ? maskPhone(p.phone) : null }));
+  }
+  return { ...patients, phone: patients.phone ? maskPhone(patients.phone) : null };
+}
 
 export type ResponseFilters = {
   status?: string;
@@ -33,7 +44,10 @@ export async function fetchResponses(
 
   const { data, error } = await query;
   if (error) throw new Error("응답 목록을 불러오지 못했습니다.");
-  return (data ?? []) as PatientRow[];
+  return (data ?? []).map((row) => {
+    const r = row as PatientRow;
+    return { ...r, patients: maskPatients(r.patients) };
+  });
 }
 
 // ── Detail ────────────────────────────────────────────────────────────────────
@@ -78,5 +92,6 @@ export async function fetchResponseDetail(id: string): Promise<ResponseDetail | 
     .single();
 
   if (error || !data) return null;
-  return data as ResponseDetail;
+  const detail = data as ResponseDetail;
+  return { ...detail, patients: maskPatients(detail.patients) } as ResponseDetail;
 }

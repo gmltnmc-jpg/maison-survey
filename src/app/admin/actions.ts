@@ -74,8 +74,15 @@ export async function signOut() {
 // ── Status (legacy — kept for StatusSelect in old [id] page) ─────────────────
 
 export async function updateStatus(responseId: string, status: ResponseStatus) {
-  const supabase = createSupabaseAdminClient();
-  const { error } = await supabase
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") {
+    throw new Error("권한이 없습니다");
+  }
+  const adminClient = createSupabaseAdminClient();
+  const { error } = await adminClient
     .from("survey_responses")
     .update({ status })
     .eq("id", responseId);
@@ -102,7 +109,16 @@ export async function updateResponseStatus(
   const status = (formData.get("status") ?? "") as ResponseStatus;
   const adminMemo = (formData.get("adminMemo") ?? "") as string;
 
-  if (!responseId) return { error: "잘못된 요청입니다" };
+  const ALLOWED_STATUSES: ResponseStatus[] = [
+    "신규 제출",
+    "상담 예정",
+    "상담 완료",
+    "보류·취소",
+  ];
+
+  if (!responseId || !ALLOWED_STATUSES.includes(status)) {
+    return { error: "잘못된 요청입니다" };
+  }
 
   const { error } = await supabase
     .from("survey_responses")

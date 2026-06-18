@@ -30,7 +30,14 @@ export default async function ResponseDetailPage({
 
   const { data, error } = await supabase
     .from("survey_responses")
-    .select("*, patients(*)")
+    .select(
+      `id, patient_id, created_at, updated_at, status, admin_memo,
+       primary_goal_text, chief_complaints,
+       current_weight, height, target_weight, bmi, risk_flags, raw_answers,
+       patients!patient_id (
+         id, name, rrn_mask, phone, sex, created_at
+       )`,
+    )
     .eq("id", id)
     .single();
 
