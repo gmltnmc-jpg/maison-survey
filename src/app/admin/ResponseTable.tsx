@@ -1,14 +1,15 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { searchByName } from "./actions";
+import { searchByName, updateResponseStatus } from "./actions";
 import type { PatientRow, PatientInfo } from "./actions";
 import type { ResponseStatus } from "@/lib/types";
 import {
   calcAgeFromRrnMask,
   bmiCategory,
   summarizeRiskFlags,
+  allowedNextStatus,
   STATUS_BADGE,
   BMI_COLOR,
 } from "@/lib/admin/utils";
@@ -18,28 +19,84 @@ function getPatient(row: PatientRow): PatientInfo | null {
   return Array.isArray(row.patients) ? row.patients[0] : row.patients;
 }
 
-function StatusBadge({ status }: { status: ResponseStatus }) {
-  const s = STATUS_BADGE[status] ?? {
-    bg: "#F9FAFB",
-    color: "#6B7280",
-    border: "#E5E7EB",
-  };
+const FALLBACK_BADGE = { bg: "#F9FAFB", color: "#6B7280", border: "#E5E7EB" };
+
+/**
+ * Inline status selector. Changing the value calls updateResponseStatus
+ * immediately (no save button). admin_memo is preserved by passing the row's
+ * existing memo. On failure the value reverts and an inline error is shown.
+ */
+function StatusDropdown({
+  responseId,
+  status,
+  adminMemo,
+}: {
+  responseId: string;
+  status: ResponseStatus;
+  adminMemo: string | null;
+}) {
+  const [value, setValue] = useState<ResponseStatus>(status);
+  const [error, setError] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  // Re-sync after server revalidation delivers a new status prop.
+  useEffect(() => {
+    setValue(status);
+  }, [status]);
+
+  // Current status is always selectable; allowedNextStatus never includes it.
+  const options: ResponseStatus[] = [status, ...allowedNextStatus(status)];
+  const badge = STATUS_BADGE[value] ?? FALLBACK_BADGE;
+
+  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const next = e.target.value as ResponseStatus;
+    const prev = value;
+    setValue(next);
+    setError(false);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("responseId", responseId);
+      fd.set("status", next);
+      fd.set("adminMemo", adminMemo ?? "");
+      const res = await updateResponseStatus(null, fd);
+      if (res?.error) {
+        setValue(prev);
+        setError(true);
+      }
+    });
+  }
+
   return (
-    <span
-      style={{
-        display: "inline-block",
-        fontSize: 11,
-        fontWeight: 500,
-        padding: "3px 8px",
-        borderRadius: 10,
-        background: s.bg,
-        color: s.color,
-        border: `1px solid ${s.border}`,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {status}
-    </span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <select
+        value={value}
+        onChange={handleChange}
+        disabled={isPending}
+        style={{
+          fontSize: 11,
+          fontWeight: 500,
+          padding: "3px 8px",
+          borderRadius: 10,
+          background: badge.bg,
+          color: badge.color,
+          border: `1px solid ${badge.border}`,
+          cursor: isPending ? "wait" : "pointer",
+          opacity: isPending ? 0.6 : 1,
+          appearance: "none",
+          WebkitAppearance: "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {options.map((s) => (
+          <option key={s} value={s} style={{ color: "var(--ink)", background: "var(--paper)" }}>
+            {s}
+          </option>
+        ))}
+      </select>
+      {error && (
+        <span style={{ fontSize: 10, color: "var(--error)" }}>상태 변경에 실패했습니다</span>
+      )}
+    </div>
   );
 }
 
@@ -67,7 +124,11 @@ function ResponseRow({ row }: { row: PatientRow }) {
   return (
     <tr style={{ borderBottom: "1px solid var(--line)" }}>
       <td style={{ padding: "10px 10px" }}>
-        <StatusBadge status={row.status} />
+        <StatusDropdown
+          responseId={row.id}
+          status={row.status}
+          adminMemo={row.admin_memo}
+        />
       </td>
       <td style={{ padding: "10px 10px", fontSize: 12, color: "var(--grey)", whiteSpace: "nowrap" }}>
         {dateStr}
@@ -176,7 +237,7 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
       {/* 필터 (GET form — URL 파라미터) */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
         <form method="GET" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {(["신규 제출", "검토 중", "상담 예정", "상담 완료", "보류·취소"] as ResponseStatus[]).map(
+          {(["신규 제출", "상담 예정", "상담 완료", "보류·취소"] as ResponseStatus[]).map(
             (s) => (
               <a
                 key={s}
