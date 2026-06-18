@@ -64,11 +64,10 @@ export function summarizeRiskFlags(
 }
 
 const STATUS_TRANSITIONS: Record<ResponseStatus, ResponseStatus[]> = {
-  "신규 제출": ["검토 중", "보류·취소"],
-  "검토 중": ["상담 예정", "상담 완료", "보류·취소"],
-  "상담 예정": ["상담 완료", "검토 중", "보류·취소"],
-  "상담 완료": ["검토 중", "보류·취소"],
-  "보류·취소": ["검토 중"],
+  "신규 제출": ["상담 예정", "보류·취소"],
+  "상담 예정": ["상담 완료", "신규 제출", "보류·취소"],
+  "상담 완료": ["신규 제출", "보류·취소"],
+  "보류·취소": ["신규 제출"],
 };
 
 export function allowedNextStatus(current: string): ResponseStatus[] {
@@ -80,7 +79,6 @@ export const STATUS_BADGE: Record<
   { bg: string; color: string; border: string }
 > = {
   "신규 제출": { bg: "#EFF6FF", color: "#2563EB", border: "#BFDBFE" },
-  "검토 중":   { bg: "#FFFBEB", color: "#D97706", border: "#FDE68A" },
   "상담 예정": { bg: "#F5F3FF", color: "#7C3AED", border: "#DDD6FE" },
   "상담 완료": { bg: "#ECFDF5", color: "#059669", border: "#A7F3D0" },
   "보류·취소": { bg: "#F9FAFB", color: "#6B7280", border: "#E5E7EB" },

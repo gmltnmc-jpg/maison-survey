@@ -22,7 +22,6 @@ export type SectionCode =
 
 export type ResponseStatus =
   | "신규 제출"
-  | "검토 중"
   | "상담 예정"
   | "상담 완료"
   | "보류·취소";
