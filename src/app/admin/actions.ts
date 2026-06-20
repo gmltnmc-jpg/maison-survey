@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { maskPhone } from "@/lib/admin/utils";
 import type { ResponseStatus } from "@/lib/types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -168,5 +169,13 @@ export async function searchByName(
     .in("patient_id", patients.map((p) => p.id))
     .order("created_at", { ascending: false });
 
-  return { results: (data ?? []) as PatientRow[] };
+  const rows = (data ?? []) as PatientRow[];
+  return {
+    results: rows.map((row) => {
+      const p = Array.isArray(row.patients) ? row.patients[0] : row.patients;
+      if (!p) return row;
+      const masked = { ...p, phone: p.phone ? maskPhone(p.phone) : null };
+      return { ...row, patients: Array.isArray(row.patients) ? [masked] : masked };
+    }),
+  };
 }
