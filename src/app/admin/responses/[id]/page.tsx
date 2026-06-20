@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { fetchResponseDetail } from "@/lib/admin/queries";
+import { fetchResponseDetail, getFemaleHealthFields } from "@/lib/admin/queries";
 import {
   maskPhone,
   calcAgeFromRrnMask,
@@ -390,11 +390,13 @@ export default async function ResponseDetailPage({
           </dl>
         </SectionShell>
 
-        {/* 6. 여성 건강 (여성만) */}
-        {isFemale && (
+        {/* 6. 여성 건강 (여성만, section === "female" 자동 추출) */}
+        {isFemale && getFemaleHealthFields().length > 0 && (
           <SectionShell title="여성 건강 리듬">
             <dl>
-              <RawField label="생리·여성 건강" answers={answers} field="female_menstrual" />
+              {getFemaleHealthFields().map(({ id, label }) => (
+                <RawField key={id} label={label} answers={answers} field={id} />
+              ))}
             </dl>
           </SectionShell>
         )}

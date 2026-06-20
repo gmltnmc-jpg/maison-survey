@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { maskPhone } from "@/lib/admin/utils";
+import { maskPhone, allowedNextStatus } from "@/lib/admin/utils";
 import type { ResponseStatus } from "@/lib/types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -83,6 +83,20 @@ export async function updateStatus(responseId: string, status: ResponseStatus) {
     throw new Error("권한이 없습니다");
   }
   const adminClient = createSupabaseAdminClient();
+
+  const { data: current } = await adminClient
+    .from("survey_responses")
+    .select("status")
+    .eq("id", responseId)
+    .single();
+
+  if (current && current.status !== status) {
+    const allowed = allowedNextStatus(current.status as ResponseStatus);
+    if (!allowed.includes(status)) {
+      throw new Error("허용되지 않은 상태 전환입니다");
+    }
+  }
+
   const { error } = await adminClient
     .from("survey_responses")
     .update({ status })
@@ -121,6 +135,25 @@ export async function updateResponseStatus(
     return { error: "잘못된 요청입니다" };
   }
 
+  // P1-1: DB의 현재 상태를 조회하여 허용된 전환인지 확인
+  const { data: current, error: fetchError } = await supabase
+    .from("survey_responses")
+    .select("status")
+    .eq("id", responseId)
+    .single();
+
+  if (fetchError || !current) {
+    return { error: "응답을 찾을 수 없습니다" };
+  }
+
+  const currentStatus = current.status as ResponseStatus;
+  if (currentStatus !== status) {
+    const allowed = allowedNextStatus(currentStatus);
+    if (!allowed.includes(status)) {
+      return { error: "허용되지 않은 상태 전환입니다" };
+    }
+  }
+
   const { error } = await supabase
     .from("survey_responses")
     .update({ status, admin_memo: adminMemo })
@@ -149,10 +182,18 @@ export async function searchByName(
   _prevState: { results: PatientRow[] } | null,
   formData: FormData,
 ): Promise<{ results: PatientRow[] }> {
+  const supabase = await createSupabaseServerClient();
+
+  // P1-2: 코드 레벨 admin role 재검증 (proxy.ts + RLS에 더한 이중 방어)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") {
+    return { results: [] };
+  }
+
   const name = ((formData.get("name") ?? "") as string).trim();
   if (!name) return { results: [] };
-
-  const supabase = await createSupabaseServerClient();
 
   // Step 1: find matching patient IDs (ilike for partial match)
   const { data: patients } = await supabase

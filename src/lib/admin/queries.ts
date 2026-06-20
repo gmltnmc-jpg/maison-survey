@@ -1,7 +1,18 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { maskPhone } from "@/lib/admin/utils";
+import { QUESTIONS } from "@/lib/survey/questions";
 import type { PatientRow, PatientInfo } from "@/app/admin/actions";
+
+// ── Female health fields (section === "female") ───────────────────────────────
+// QUESTIONS is server-only in this file to avoid bundling the full question
+// list in client components that import from utils.ts.
+export function getFemaleHealthFields(): { id: string; label: string }[] {
+  return QUESTIONS
+    .filter((q) => q.section === "female")
+    .sort((a, b) => a.order - b.order)
+    .map((q) => ({ id: q.id, label: q.label }));
+}
 
 function maskPatients(
   patients: PatientInfo | PatientInfo[] | null,
@@ -32,6 +43,14 @@ export async function fetchResponses(
   filters: ResponseFilters = {},
 ): Promise<PatientRow[]> {
   const supabase = await createSupabaseServerClient();
+
+  // P1-2: 코드 레벨 admin role 재검증 (proxy.ts + RLS에 더한 이중 방어)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") {
+    throw new Error("인증이 필요합니다");
+  }
 
   let query = supabase
     .from("survey_responses")
@@ -72,6 +91,14 @@ export type ResponseDetail = {
 
 export async function fetchResponseDetail(id: string): Promise<ResponseDetail | null> {
   const supabase = await createSupabaseServerClient();
+
+  // P1-2: 코드 레벨 admin role 재검증 (proxy.ts + RLS에 더한 이중 방어)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || user.app_metadata?.role !== "admin") {
+    return null;
+  }
 
   // raw_answers is included so the detail page can render lifestyle/signal
   // sections. rrn_encrypted is NEVER selected; basic_rrn is already stripped
