@@ -215,6 +215,69 @@ const TABLE_HEADERS = [
   "상담 목표", "BMI", "확인 항목", "메모", "상세",
 ];
 
+const STATUS_FILTERS: ResponseStatus[] = [
+  "신규 제출",
+  "상담 예정",
+  "상담 완료",
+  "보류·취소",
+];
+
+const DATE_FILTERS = [
+  { label: "오늘", days: 0 },
+  { label: "7일", days: 7 },
+  { label: "30일", days: 30 },
+] as const;
+
+type Filters = {
+  status?: ResponseStatus;
+  from?: string;
+  to?: string;
+};
+
+function normalizeStatus(status?: string): ResponseStatus | undefined {
+  return STATUS_FILTERS.includes(status as ResponseStatus)
+    ? (status as ResponseStatus)
+    : undefined;
+}
+
+function getDateRange(days: number): { from: string; to: string } {
+  const from = new Date();
+  from.setDate(from.getDate() - days);
+  return {
+    from: from.toISOString().split("T")[0],
+    to: new Date().toISOString().split("T")[0],
+  };
+}
+
+function syncUrl(filters: Filters) {
+  const params = new URLSearchParams();
+  if (filters.status) params.set("status", filters.status);
+  if (filters.from) params.set("from", filters.from);
+  if (filters.to) params.set("to", filters.to);
+  const query = params.toString();
+  window.history.pushState(null, "", query ? `/admin?${query}` : "/admin");
+}
+
+function filterRows(rows: PatientRow[], filters: Filters): PatientRow[] {
+  return rows.filter((row) => {
+    if (filters.status && row.status !== filters.status) return false;
+
+    if (filters.from || filters.to) {
+      const created = new Date(row.created_at).getTime();
+      if (filters.from) {
+        const from = new Date(`${filters.from}T00:00:00`).getTime();
+        if (created < from) return false;
+      }
+      if (filters.to) {
+        const to = new Date(`${filters.to}T23:59:59`).getTime();
+        if (created > to) return false;
+      }
+    }
+
+    return true;
+  });
+}
+
 interface Props {
   initialRows: PatientRow[];
   urlParams: { status?: string; from?: string; to?: string };
@@ -225,74 +288,109 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
     { results: PatientRow[] } | null,
     FormData
   >(searchByName, null);
+  const [filters, setFilters] = useState<Filters>({
+    status: normalizeStatus(urlParams.status),
+    from: urlParams.from,
+    to: urlParams.to,
+  });
 
-  const rows = searchState !== null ? searchState.results : initialRows;
+  const filteredRows = filterRows(initialRows, filters);
+  const rows = searchState !== null ? searchState.results : filteredRows;
   const isSearchActive = searchState !== null;
+  const hasFilters = Boolean(filters.status || filters.from || filters.to);
+
+  function applyFilters(next: Filters) {
+    setFilters(next);
+    syncUrl(next);
+  }
+
+  function toggleStatus(status: ResponseStatus) {
+    applyFilters({
+      ...filters,
+      status: filters.status === status ? undefined : status,
+    });
+  }
+
+  function applyDateFilter(days: number) {
+    const range = getDateRange(days);
+    const active = filters.from === range.from && filters.to === range.to;
+    applyFilters({
+      ...filters,
+      from: active ? undefined : range.from,
+      to: active ? undefined : range.to,
+    });
+  }
 
   return (
     <>
-      {/* 필터 (GET form — URL 파라미터) */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <form method="GET" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {(["신규 제출", "상담 예정", "상담 완료", "보류·취소"] as ResponseStatus[]).map(
-            (s) => (
-              <Link
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {STATUS_FILTERS.map((s) => {
+            const active = filters.status === s;
+            return (
+              <button
                 key={s}
-                href={`/admin?status=${encodeURIComponent(s)}`}
+                type="button"
+                onClick={() => toggleStatus(s)}
                 style={{
                   fontSize: 12,
                   padding: "4px 10px",
                   borderRadius: 10,
-                  textDecoration: "none",
-                  ...(urlParams.status === s
+                  border: active ? "1px solid var(--ink)" : "1px solid var(--line)",
+                  cursor: "pointer",
+                  ...(active
                     ? { background: "var(--ink)", color: "var(--paper)" }
-                    : { background: "var(--cream)", color: "var(--ink-soft)", border: "1px solid var(--line)" }),
+                    : { background: "var(--cream)", color: "var(--ink-soft)" }),
                 }}
               >
                 {s}
-              </Link>
-            ),
-          )}
-          {urlParams.status && (
-            <Link
-              href="/admin"
-              style={{ fontSize: 12, color: "var(--grey)", alignSelf: "center", textDecoration: "none" }}
-            >
-              × 초기화
-            </Link>
-          )}
+              </button>
+            );
+          })}
 
           <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
-            {[
-              { label: "오늘", days: 0 },
-              { label: "7일", days: 7 },
-              { label: "30일", days: 30 },
-            ].map(({ label, days }) => {
-              const from = new Date();
-              from.setDate(from.getDate() - days);
-              const fromStr = from.toISOString().split("T")[0];
-              const today = new Date().toISOString().split("T")[0];
-              const active = urlParams.from === fromStr && urlParams.to === today;
+            {DATE_FILTERS.map(({ label, days }) => {
+              const range = getDateRange(days);
+              const active = filters.from === range.from && filters.to === range.to;
               return (
-                <Link
+                <button
                   key={label}
-                  href={`/admin?from=${fromStr}&to=${today}${urlParams.status ? `&status=${encodeURIComponent(urlParams.status)}` : ""}`}
+                  type="button"
+                  onClick={() => applyDateFilter(days)}
                   style={{
                     fontSize: 12,
                     padding: "4px 10px",
                     borderRadius: 10,
-                    textDecoration: "none",
+                    border: active ? "1px solid var(--ink)" : "1px solid var(--line)",
+                    cursor: "pointer",
                     ...(active
                       ? { background: "var(--ink)", color: "var(--paper)" }
-                      : { background: "var(--cream)", color: "var(--ink-soft)", border: "1px solid var(--line)" }),
+                      : { background: "var(--cream)", color: "var(--ink-soft)" }),
                   }}
                 >
                   {label}
-                </Link>
+                </button>
               );
             })}
           </div>
-        </form>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={() => applyFilters({})}
+              style={{
+                border: "none",
+                background: "transparent",
+                fontSize: 12,
+                color: "var(--grey)",
+                cursor: "pointer",
+                alignSelf: "center",
+              }}
+            >
+              × 초기화
+            </button>
+          )}
+        </div>
 
         {/* 이름 검색 (서버 액션 — URL 미노출) */}
         <form
@@ -348,9 +446,9 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
         </form>
       </div>
 
-      {isSearchActive && (
+      {(isSearchActive || hasFilters) && (
         <p style={{ fontSize: 12, color: "var(--grey)", marginBottom: 12 }}>
-          이름 검색 결과 {rows.length}건
+          {isSearchActive ? "이름 검색 결과" : "필터 결과"} {rows.length}건
         </p>
       )}
 

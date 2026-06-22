@@ -11,11 +11,7 @@ export default async function AdminPage({
 
   let rows;
   try {
-    rows = await fetchResponses({
-      status: params.status,
-      dateFrom: params.from,
-      dateTo: params.to,
-    });
+    rows = await fetchResponses();
   } catch {
     return (
       <div style={{ textAlign: "center", marginTop: 80 }}>
