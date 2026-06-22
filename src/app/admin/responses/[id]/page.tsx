@@ -468,6 +468,7 @@ export default async function ResponseDetailPage({
         {/* 10. 관리자 작업 영역 */}
         <SectionShell title="관리자 작업 영역">
           <AdminWorkArea
+            key={`${data.id}-${data.updated_at}-${data.admin_memo ?? ""}`}
             responseId={data.id}
             currentStatus={data.status as ResponseStatus}
             currentMemo={data.admin_memo}

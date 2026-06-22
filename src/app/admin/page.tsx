@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { fetchResponses } from "@/lib/admin/queries";
 import ResponseTable from "./ResponseTable";
 
@@ -21,7 +22,7 @@ export default async function AdminPage({
         <p style={{ fontSize: 14, color: "var(--ink-soft)", marginBottom: 16 }}>
           응답을 불러오지 못했습니다. 잠시 후 다시 시도하세요.
         </p>
-        <a
+        <Link
           href="/admin"
           style={{
             fontSize: 13,
@@ -33,7 +34,7 @@ export default async function AdminPage({
           }}
         >
           다시 시도
-        </a>
+        </Link>
       </div>
     );
   }

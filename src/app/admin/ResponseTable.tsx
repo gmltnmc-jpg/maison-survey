@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import { searchByName, updateResponseStatus } from "./actions";
 import type { PatientRow, PatientInfo } from "./actions";
@@ -39,10 +39,6 @@ function StatusDropdown({
   const [error, setError] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // Re-sync after server revalidation delivers a new status prop.
-  useEffect(() => {
-    setValue(status);
-  }, [status]);
 
   // Current status is always selectable; allowedNextStatus never includes it.
   const options: ResponseStatus[] = [status, ...allowedNextStatus(status)];
@@ -125,6 +121,7 @@ function ResponseRow({ row }: { row: PatientRow }) {
     <tr style={{ borderBottom: "1px solid var(--line)" }}>
       <td style={{ padding: "10px 10px" }}>
         <StatusDropdown
+          key={`${row.id}-${row.status}`}
           responseId={row.id}
           status={row.status}
           adminMemo={row.admin_memo}
@@ -239,7 +236,7 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
         <form method="GET" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {(["신규 제출", "상담 예정", "상담 완료", "보류·취소"] as ResponseStatus[]).map(
             (s) => (
-              <a
+              <Link
                 key={s}
                 href={`/admin?status=${encodeURIComponent(s)}`}
                 style={{
@@ -253,16 +250,16 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
                 }}
               >
                 {s}
-              </a>
+              </Link>
             ),
           )}
           {urlParams.status && (
-            <a
+            <Link
               href="/admin"
               style={{ fontSize: 12, color: "var(--grey)", alignSelf: "center", textDecoration: "none" }}
             >
               × 초기화
-            </a>
+            </Link>
           )}
 
           <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
@@ -277,7 +274,7 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
               const today = new Date().toISOString().split("T")[0];
               const active = urlParams.from === fromStr && urlParams.to === today;
               return (
-                <a
+                <Link
                   key={label}
                   href={`/admin?from=${fromStr}&to=${today}${urlParams.status ? `&status=${encodeURIComponent(urlParams.status)}` : ""}`}
                   style={{
@@ -291,7 +288,7 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
                   }}
                 >
                   {label}
-                </a>
+                </Link>
               );
             })}
           </div>

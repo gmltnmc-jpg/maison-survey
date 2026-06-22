@@ -24,11 +24,6 @@ export default function AdminWorkArea({
   const [memo, setMemo] = useState(currentMemo ?? "");
   const [isDirty, setIsDirty] = useState(false);
 
-  // Sync props after server revalidation
-  useEffect(() => {
-    setMemo(currentMemo ?? "");
-    setIsDirty(false);
-  }, [currentMemo]);
 
   // Warn on navigate away when unsaved
   useEffect(() => {
