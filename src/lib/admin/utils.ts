@@ -78,15 +78,31 @@ export const STATUS_BADGE: Record<
   string,
   { bg: string; color: string; border: string }
 > = {
-  "신규 제출": { bg: "#EFF6FF", color: "#2563EB", border: "#BFDBFE" },
-  "상담 예정": { bg: "#F5F3FF", color: "#7C3AED", border: "#DDD6FE" },
-  "상담 완료": { bg: "#ECFDF5", color: "#059669", border: "#A7F3D0" },
-  "보류·취소": { bg: "#F9FAFB", color: "#6B7280", border: "#E5E7EB" },
+  "신규 제출": {
+    bg:     "var(--color-info-soft-bg)",
+    color:  "var(--color-info-soft)",
+    border: "var(--color-border)",
+  },
+  "상담 예정": {
+    bg:     "var(--color-info-soft-bg)",
+    color:  "var(--color-info-soft)",
+    border: "var(--color-border)",
+  },
+  "상담 완료": {
+    bg:     "var(--color-success-soft-bg)",
+    color:  "var(--color-success-soft)",
+    border: "var(--color-border)",
+  },
+  "보류·취소": {
+    bg:     "var(--color-surface-muted)",
+    color:  "var(--color-text-muted)",
+    border: "var(--color-border)",
+  },
 };
 
 export const BMI_COLOR: Record<BmiLevel, string> = {
-  low: "#2563EB",
-  normal: "#059669",
-  caution: "#D97706",
-  high: "#DC2626",
+  low:     "var(--color-info-soft)",
+  normal:  "var(--color-success-soft)",
+  caution: "var(--color-warning-soft)",
+  high:    "var(--color-danger-soft)",
 };

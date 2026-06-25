@@ -1,0 +1,456 @@
+# Maison de Balance — 프론트엔드 디자인 명세서 v2
+
+> 초진 설문 시스템 (Patient Survey) + Admin Dashboard
+> 본 문서는 **디자인 명세서**입니다. 코드·CSS·컴포넌트 구현은 포함하지 않습니다.
+> v2는 `/structure-inventory` 실측 결과로 **구조 의존 값을 실제 코드에 바인딩**한 버전입니다.
+
+### v2 변경 요약 (v1 대비)
+
+- **§0 구조 바인딩** 신규 — 모든 구조 의존 값을 코드 실측값으로 확정(출처 명시).
+- **status** 4값 확정(`신규 제출`·`상담 예정`·`상담 완료`·`보류·취소`) + **전이 규칙** 반영. "검토 중" 완전 제거.
+- **상세 기준 라우트 = `/admin/responses/[id]`** 확정(레거시 `/admin/[id]` 제외).
+- **위험신호 severity 3단계** 추가 + 17 code 매핑 + badge 집계 규칙 + fallback.
+- **마스킹 포맷** 실측값으로 교체(phone `010-****-5678`, rrn `901010-1******`).
+- **조건부 게이트** 실제 조건으로 교체(여성/출산).
+- **BMI 구간** 실측값 반영.
+- **status 변경 단일화** — 목록의 즉시 저장 드롭다운 제거, **상세 페이지에서만** 전이 규칙 + 명시 저장으로 변경(§G-2·§G-5).
+- **BMI 표시는 조용한 라벨** — 중립톤 기본, 저체중·비만만 옅은 amber 힌트(강한 의미색 매핑 안 함, 추후 재검토 가능).
+- 대시보드 상세 섹션 순서를 코드 `DASHBOARD_SECTION_ORDER` 기준으로 교체.
+
+---
+
+## 0. 구조 바인딩 (코드 실측 확정값) — v2 신규
+
+> 이 표가 명세 전체의 **단일 진실 소스**다. 구조가 바뀌면 `/structure-inventory`를 재실행해 이 표부터 갱신한다.
+> 디자인은 이 값에 **바인딩**될 뿐, 이 값을 바꾸려고 코드/스키마/RLS를 수정하지 않는다.
+
+| 항목 | 실측 확정값 | 출처 |
+|---|---|---|
+| status enum | `신규 제출`(default) · `상담 예정` · `상담 완료` · `보류·취소` (4값) | types.ts:23–27 = DB CHECK |
+| status 전이 | 신규→[예정,보류] / 예정→[완료,신규,보류] / 완료→[신규,보류] / 보류→[신규] | utils.ts:66–75 |
+| 설문 섹션 키·순서(입력) | basic, consent, goal, body_metrics, diet_history, sleep, meal, alcohol_caffeine, hydration, body_signal, female, medical, lifestyle, family, final | sections.ts:16–63 |
+| 대시보드 섹션 순서(열람) | basic, consent, goal, body_metrics, medical, lifestyle, family, female, sleep, meal, alcohol_caffeine, hydration, body_signal, diet_history, final | sections.ts:70–86 |
+| 상세 기준 라우트 | `/admin/responses/[id]` (현행). 레거시 `/admin/[id]`는 디자인 범위 제외 | ResponseTable.tsx:195 |
+| phone 마스킹 | `010-****-5678` (앞3 + `-****-` + 뒤4) | admin/utils.ts:3–8, survey/mask.ts:7–13 |
+| rrn 마스킹(저장형) | `901010-1******` (앞6 + `-` + 성별1 + `******`) | crypto/rrn.ts:62–68 |
+| 관리자 수정 가능 컬럼 | `status`, `admin_memo` (+ `updated_at` 트리거) | actions.ts:157–160 |
+| risk_flags 구조 | 저장값은 `{code, label}[]`, 17 code (**severity 미저장**). severity는 UI 레이어 `code→등급` 매핑으로 **렌더 시 파생** | riskFlags.ts:4,20–66 |
+| 여성 섹션 게이트 | `basic_sex == "여성"` | sections.ts:57 / conditions.ts:42–49 |
+| 출산 게이트 | `basic_birth_count != "없음"` → `body_weight_pre/post_birth` 노출 | questions.ts:280,294 |
+| BMI 카테고리 | `<18.5 저체중` / `<23 정상` / `<25 과체중` / `≥25 비만` (구간은 코드 고정값, **표시 색은 디자인 결정** — 아래 §G-2 참조) | utils.ts:40–45 |
+
+### 0-1. ⚠️ 구현 시 주의 (디자인 외 백로그 — 보고만)
+
+- **admin_memo UPDATE grant:** 운영 DB `column_privileges`상 `authenticated`의 UPDATE 컬럼이 `status, updated_at`만으로 보이는 정황(0003 의도는 `status, admin_memo, updated_at`). 메모 저장이 grant 부족으로 실패할 수 있음 → **저장 실패 UX(§G-5)는 반드시 구현**하되, grant 자체 수정은 DB 작업으로 분리.
+- **anon grant 잔존:** `survey_responses`에 anon grant가 남아있으나 RLS로 차단됨. 보안 표면 정리 후보(디자인 무관).
+- **health_score / pdf_generated / score_components:** 컬럼만 존재, 로직 미구현 → 대시보드에서 **"예정" 영역**으로 자리만 예약, 값 미표시.
+- **severity 파생:** risk_flags에는 severity가 저장되지 않는다. UI 레이어의 정적 `code→severity` 매핑(§G-3)으로 **렌더 시 파생**한다. 매핑에 없는 code → **medium 폴백**. → `computeRiskFlags`·타입·DB **변경 없음**(구조 불변).
+  - 구현상 `getRiskSeverity(code, stored?)`처럼 "DB 저장값이 있으면 우선 사용"하는 자리를 미리 만들어둘 수 있다(현재는 항상 `undefined`, 동작에 영향 없음). **이 자리가 있다는 것이 DB에 severity를 저장하기로 한 결정은 아니다.** 실제로 `risk_flags`에 severity 컬럼을 추가하기로 정해지면, 그건 §0 구조 바인딩 변경이므로 **`/structure-inventory`로 재확인 후 본 명세를 갱신**한 다음 진행한다. 화면 코드가 안 바뀐다는 것이 구조 변경의 승인을 의미하지 않는다.
+- **토큰 적용 방식:** 명세 토큰(`--color-*`)을 **정본(canonical)** 으로 정의하고, 기존 변수(`--cream`·`--paper`·`--gold`·`--line` 등)는 명세 토큰을 가리키는 **별칭(alias)** 으로 재정의한다. 두 토큰 체계를 독립적으로 병존시키지 않는다(단일 진실 소스 유지 + 기존 컴포넌트 무중단). 기존 `--error`(빨강)는 `--color-warning-soft`로 매핑(빨강 금지).
+
+---
+
+## A. 디자인 방향 요약
+
+Maison de Balance는 "조용한 고급감(quiet luxury)"을 입은 **의료 상담 준비 도구**다.
+고급 향수 부티크나 호텔 컨시어지의 무드를 빌리되, 화면의 본질은 **신뢰·가독성·낮은 작성 부담**이다.
+
+핵심 긴장 구조 두 가지를 항상 의식한다.
+
+1. **고급감 ↔ 사용성** — 브랜드 무드는 여백·절제·소재감으로 만든다. 장식·애니메이션·금박으로 만들지 않는다. 문항 자체는 언제나 쉽고 명확하다.
+2. **환자 화면 ↔ 관리자 화면** — 환자 화면은 **브랜드 경험 + 안심** 우선. 관리자 화면은 **속도 + 정확성 + 최소 노출** 우선. 같은 토큰, 다른 느낌.
+
+| 영역 | 1순위 | 2순위 | 톤 |
+|---|---|---|---|
+| 환자 설문 | 작성 편의·안심 | 브랜드 고급감 | 조용하고 부드러움 |
+| Admin Dashboard | 빠른 파악·보안 | 절제된 브랜드 일관성 | 차분하고 효율적 |
+
+---
+
+## B. 디자인 원칙 10
+
+1. **여백이 고급을 만든다.** 장식이 아니라 공간·정렬·일관성으로.
+2. **의료 맥락에서는 가독성이 고급감보다 우선이다.** 멋이 읽기를 방해하면 멋을 버린다.
+3. **한 화면은 한 가지에 집중한다.** 섹션 단위로 끊어 인지 부하·이탈을 줄인다.
+4. **색은 의미로만 쓴다.** 위험신호 색(amber/burgundy)은 장식으로 절대 쓰지 않는다.
+5. **진단이 아니라 준비다.** 환자에게 "질환/위험"을 암시하는 표현·시각언어를 쓰지 않는다.
+6. **민감정보는 기본이 '가림'이다.** 노출은 필요한 화면에서 필요한 만큼만 의도적으로.
+7. **모바일이 기본이다.** 한 손 작성·터치 기준으로 먼저 설계한다.
+8. **압박하지 않는다.** 진행률·필수 표시·오류 어디에도 불안을 유발하지 않는다.
+9. **환자 화면과 관리자 화면은 다른 도구다.** 우선순위가 다르면 디자인도 다르게.
+10. **토큰이 곧 일관성이다.** 색·타이포·간격·반경은 토큰으로만, 임의값 금지.
+
+---
+
+## C. 컬러 시스템
+
+> 토큰 역할 + 추천 HEX. 분위기는 "따뜻한 아이보리 캔버스 위에, 살짝 더 밝은 카드가 떠 있는" 구조.
+
+### C-1. 기본 토큰
+
+| 토큰 | 역할 | 추천 HEX | 비고 |
+|---|---|---|---|
+| `--color-bg` | 전체 배경 (Warm Ivory) | `#F4EFE6` | 순백 금지 |
+| `--color-surface` | 카드/입력 표면 (Soft White) | `#FDFBF7` | 배경보다 약간 밝게 |
+| `--color-surface-muted` | 가라앉은 영역 (테이블 헤더, disabled, accordion) | `#ECE6DA` | |
+| `--color-text` | 본문/제목 (Deep Charcoal) | `#232019` | 순흑 금지 |
+| `--color-text-muted` | 보조 텍스트 (Warm Gray) | `#756E62` | |
+| `--color-text-subtle` | 가장 약한 텍스트 | `#9A9284` | placeholder |
+| `--color-border` | 기본 경계선 | `#E3DCCF` | |
+| `--color-border-strong` | 강조 경계/구분선 | `#CFC6B5` | |
+| `--color-gold` | 샴페인 골드 강조 | `#B69A63` | **절제 사용** |
+| `--color-gold-muted` | 골드 보조(틴트) | `#DCCDA9` | 면적용 |
+| `--color-gold-hairline` | 골드 헤어라인 | `#E8DCC2` | 1px 전용 |
+
+### C-2. 의미(semantic) 토큰 — 모두 'soft' / severity 매핑 포함
+
+| 토큰 | 역할 | 텍스트 HEX | 배경 틴트 HEX | 위험 등급 매핑 |
+|---|---|---|---|---|
+| `--color-danger-soft` | 상담 전 확인 (Soft Burgundy) | `#7A444B` | `#F3E4E2` | **risk `high`** |
+| `--color-warning-soft` | 확인 필요 (Muted Amber) | `#8A6225` | `#F5EAD6` | **risk `medium`** + severity 폴백 |
+| `--color-info-soft` | 참고/중립 안내 | `#5C5A52` | `#EFEBE2` | **risk `low`**, status 기본 |
+| `--color-success-soft` | 완료/정상 (Muted Sage) | `#4F6349` | `#E6EBE0` | 제출 완료, 저장 성공, `상담 완료` status |
+
+### C-3. 색 사용 규칙
+
+- **빨강 금지.** 위험 최고 등급(`high`)도 강한 빨강이 아니라 Soft Burgundy(`#7A444B`)로만.
+- **골드 면적 제한.** `--color-gold`는 포인트 1~2곳(워드마크, 1px 라인, 활성 인디케이터)에만.
+- **성공 세이지 1종.** 병원식 초록 회피.
+- **status badge·risk badge는 면(fill) 아닌 틴트(soft bg + soft text)** 로.
+- 환자 화면에서는 danger/warning 계열 사용 안 함(검증 오류 제외, 그조차 부드럽게).
+
+---
+
+## D. 타이포그래피 시스템
+
+### D-1. 폰트 선택
+
+**1순위 (웹폰트)**
+- 본문·UI·입력: **Pretendard** (한글 가독성 최상, OFL, 무료). UI·입력·관리자 전부 통일.
+- 제목·브랜드 모먼트: **Noto Serif KR** (절제된 세리프). Hero/Section 제목 한정.
+
+**시스템 폴백**
+- Sans: `-apple-system, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", system-ui, sans-serif`
+- Serif: `"Noto Serif KR", "Apple SD Gothic Neo", serif` (실패 시 Pretendard 폴백 허용)
+
+**금지** — 장식적 명조·붓글씨·한자 장식 글꼴, 제목의 과한 세리프('한약방' 무드), 본문/입력의 세리프.
+
+> 세리프는 소수의 제목에만, Pretendard는 읽고 입력하는 모든 곳에.
+
+### D-2. 타입 스케일 (모바일 기준 / 데스크톱 +1~2단계 허용)
+
+| 역할 | 폰트 | 크기(모바일) | 굵기 | 비고 |
+|---|---|---|---|---|
+| Hero title | Noto Serif KR | 28–32px | 600 | 첫·완료 화면 한정 |
+| Section title | Noto Serif KR | 20–22px | 600 | |
+| Question label | Pretendard | 16–17px | 600 | **14px 미만 금지** |
+| Helper text | Pretendard | 13–14px | 400 | text-muted |
+| Input text | Pretendard | 16px | 400 | **모바일 16px 고정** |
+| Error text | Pretendard | 13px | 500 | warning-soft |
+| Admin table | Pretendard | 13–14px | 400/500 | 13px 하한 |
+| Badge | Pretendard | 11–12px | 600 | |
+| Memo | Pretendard | 14–15px | 400 | 줄높이 1.6 |
+
+- 줄높이: 본문 1.6 / 라벨 1.4 / 제목 1.25.
+- 모바일 입력 폰트 **16px 고정**(iOS 줌 방지).
+
+---
+
+## E. 공통 레이아웃 원칙
+
+- **최대 너비:** 환자 설문 `~560px`, Admin 목록 `~1200px`, Admin 상세 `~880px`.
+- **배경:** `--color-bg` 단색 아이보리. 패턴·이미지·그라데이션 금지.
+- **카드:** `--color-surface`, 반경 12–16px, soft shadow 1단계.
+- **간격:** 4px 베이스(`4/8/12/16/24/32/48`). 섹션 간 32–48px, 카드 패딩 모바일 20 / 데스크톱 28–32.
+- **반경:** 입력·버튼 10 / 카드 12–16 / badge 999.
+- **상단 브랜드:** 워드마크 작게 + 골드 헤어라인 1px. 큰 로고 금지.
+- **포커스 링:** 모든 인터랙티브 요소에 골드 muted 2px.
+
+---
+
+## F. 환자 설문 UI 명세
+
+### F-1. 전체 레이아웃 & 진행 구조
+
+- **한 화면 = 한 섹션.** 15섹션(§0 입력 순서)을 챕터 6개로 묶어 체감 길이 축소. 진행률은 챕터 기반.
+
+| 챕터 | 포함 섹션(키) |
+|---|---|
+| 시작 | (intro) |
+| 기본 정보 | basic, consent |
+| 목표 | goal |
+| 몸 상태 | body_metrics, diet_history |
+| 생활 리듬 | sleep, meal, alcohol_caffeine, hydration, body_signal |
+| 건강 | female(조건부), medical, lifestyle, family |
+| 마무리 | final |
+
+- **진행률:** 상단 슬림 바(높이 3–4px, 채움 `--color-gold-muted`). **숫자 카운트 노출 금지.** 현재 챕터명만 작게(`text-muted`).
+- **이전/다음:** 모바일 하단 sticky(다음=우측 주버튼, 이전=좌측 고스트). 데스크톱 카드 하단 우측. **다음은 차콜 채움**(골드 채움 금지).
+
+### F-2. 첫 화면 (intro)
+
+- Hero(세리프): 예) "몸의 리듬을 이해하기 위한 사전 설문"
+- 짧은 안내 2–3줄(준비 목적, 마케팅 카피 금지), 안심 문구, 예상 소요시간 1줄, 시작 버튼 1개.
+- 금지: "-10kg!" 류, 비포애프터, 후기/별점, 자극 카피.
+
+### F-3. 문항 컴포넌트 스타일 원칙
+
+| 타입 | 원칙 |
+|---|---|
+| `short_text` | 단일 라인, placeholder는 예시만, 높이 48px+ |
+| `long_text` | 멀티라인 자동 확장, 최소 3줄, 글자수 압박 표시 금지 |
+| `number` | 숫자 키패드, 단위는 우측 suffix(kg/cm) |
+| `time` | 시간 입력 또는 시/분 선택, 형식 힌트 helper |
+| `single_choice` | 카드형 라디오, 선택 시 골드 헤어라인+옅은 채움, 전체 터치 |
+| `multiple_choice` | 카드형 체크박스, 개수 제한은 helper |
+| `yes_no` | 좌우 2분할 토글, 둘 다 중립색(옳고그름 암시 금지) |
+| `scale_grid` | 모바일은 **세로 누적 리스트**로 분해, 1행=1항목 |
+| 조건부 문항 | F-4 |
+| 섹션 설명문 | 카드 상단 `text-muted` 1–2문장(왜 묻는지) |
+| 필수 표시 | "(필수)" 텍스트 또는 골드 점. 빨강 별표 금지 |
+| 선택 표시 | "(선택)" 회색, 더 약하게 |
+
+- 선택지 카드: 반경 10px, 선택 시 `border-strong + gold-hairline + surface-muted 살짝`, 체크는 골드.
+- 라벨–입력 8px, 입력–helper 6px, 항목 간 24px.
+
+### F-4. 조건부 문항 표시 (실제 게이트 바인딩)
+
+- **여성 섹션:** `basic_sex == "여성"` 일 때만 노출. 상단 안내 한 줄: "여성 건강과 관련해 몇 가지만 더 여쭙겠습니다."
+- **출산 관련 문항:** `basic_birth_count != "없음"` 일 때만 `body_weight_pre/post_birth` 노출. 미해당 시 **렌더 자체 제외**.
+- 등장 모션은 짧은 페이드/슬라이드(150–200ms, 1단계). 과한 모션 금지.
+- 민감 섹션도 시각적으로 다른 섹션과 동일하게 다뤄 '특별히 무거운' 인상 금지.
+
+### F-5. 검증/오류 메시지 톤
+
+- 위치: 입력 바로 아래, `warning-soft` 색, 13px, 점/원형 아이콘(느낌표 금지).
+- 권장: "이 항목은 상담 준비를 위해 필요합니다." / "숫자만 입력해주세요." / "시간 형식으로 입력해주세요. (예: 23:30)" / "필수 항목을 한 번 더 확인해주세요."
+- 금지: "잘못 입력/오류/위험/질환 의심", 빨강 박스, shake.
+- 제출 시도 시 미입력 필수로 부드러운 스크롤+포커스, 상단 1줄 안내.
+
+### F-6. 제출 완료 화면
+
+- Hero(세리프) + Muted Sage 체크(작게, 골드 아님).
+- 3요소: 안심("설문이 안전하게 제출되었습니다.") / 다음 안내(짧게) / 보안 인상.
+- 추가 버튼 없음(또는 '닫기' 1개). 재제출 유도·마케팅 금지.
+
+---
+
+## G. Admin Dashboard UI 명세
+
+> 우선순위: **속도·정확·최소 노출.** 같은 토큰, 더 높은 밀도.
+> **상세 기준 라우트 = `/admin/responses/[id]`** (현행, role 재검증·자동 여성필드·risk hint 포함). 레거시 `/admin/[id]`는 디자인 범위 제외.
+
+### G-1. Admin 로그인
+
+- 중앙 카드 + 워드마크 + 골드 헤어라인. 장식 배제.
+- 이메일/비밀번호 + 로그인 버튼(차콜 채움).
+- 오류: "로그인 정보를 다시 확인해주세요."(계정 존재 암시 금지) / 세션 만료 / 권한 없음 안내.
+- 모바일 대응 필수.
+
+### G-2. 응답 목록
+
+- 데스크톱 테이블 / 모바일 카드형 전환.
+
+| 항목 | 표시 | 비고 |
+|---|---|---|
+| 제출일 | `YYYY.MM.DD HH:mm` | 정렬 기본(최신순) |
+| 환자명 | 전체 | 상담 식별 |
+| 연락처 | **`010-****-5678`** | 원문 금지 |
+| 성별 | 표시 | |
+| 상담 목표 요약 | 1줄 말줄임 | goal 핵심 |
+| 주요 관심 영역 | 태그 1–2개 | 초과 "+N" |
+| BMI / 현재 체중 | 표시(조용한 라벨, 아래 참조) | 구간은 §0, 색 방침은 본 항목 |
+| 위험신호 | **개수 badge** | high+medium만 집계(§G-3) |
+| status | 틴트 badge | §0 4값 |
+| admin_memo 유무 | 점/아이콘 | 내용 미표시 |
+| 상세보기 | 행 클릭(→ `/admin/responses/[id]`) | |
+
+- 행 높이 넉넉히, 얼터네이트 행, 헤더 `text-muted`+골드 헤어라인.
+- **주소·RRN 등 민감정보 목록 노출 금지.**
+- **status badge 색:** `상담 완료`=success-soft, 그 외(`신규 제출`·`상담 예정`)=info-soft, `보류·취소`=가장 약한 subtle 톤(닫힘 인상).
+- **status badge는 목록에서 읽기 전용이다.** 목록에서 직접 변경(드롭다운·인라인 수정)할 수 없다. **status 변경은 상세 페이지의 관리자 작업 영역(§G-5)에서만** 가능하다(전이 규칙 + 명시 저장으로 실수 방지).
+- **BMI 표시 방침(확정): 조용한 라벨.** 숫자 + 구간 라벨(저체중/정상/과체중/비만)을 모두 `text-muted` 중립톤으로 표시한다. 강한 의미색 매핑(파랑/초록/노랑/빨강 등 진단처럼 보이는 배색)은 쓰지 않는다. 예외적으로 **저체중·비만 구간에만 옅은 amber 힌트**(아주 약한 강조, badge 아님 — 텍스트 색 정도)를 허용해 눈에 띄게 한다. 정상·과체중은 완전 중립.
+  - *(보류 메모: 추후 실사용 중 식별성이 부족하다고 판단되면, 4구간 고정 색 매핑(예: 저체중=info, 정상=success, 과체중=warning, 비만=danger 톤)으로 전환 가능. 그 결정이 내려지면 이 항목과 §0을 함께 갱신할 것 — 임의로 색을 추가하지 말고 명세 갱신 후 적용.)*
+
+### G-3. 위험신호 표시 (risk_flags = 진단 아님) — severity 3단계
+
+**severity 매핑 (17 code 전부 · riskFlags.ts 기준):**
+
+| 등급 | 표시 라벨 | 색 토큰 | code (label) |
+|---|---|---|---|
+| `high` | 상담 전 확인 | `--color-danger-soft` (Burgundy) | cond_cardio(고혈압·심혈관 질환), cond_diabetes(당뇨·공복혈당장애), cond_kidney(신장 질환), urine_foam(소변 거품), edema_whole(전신 부종), target_underweight(목표 BMI 저체중) |
+| `medium` | 확인 필요 | `--color-warning-soft` (Amber) | cond_thyroid(갑상선 질환), med_psych(수면제·신경안정제·항우울제 복용), med_steroid(스테로이드제 복용), sleep_severe(수면 거의 못 함), urine_dark(소변 주황·갈색), binge_guilt(폭식 후 죄책감 경험) |
+| `low` | 참고 | `--color-info-soft` (중립) | med_contraceptive(피임약·피임 시술), food_allergy(음식 알레르기 있음), sleep_aid(수면 보조제·안정제 복용), appetite_drop(최근 식욕 저하), energy_drop(최근 컨디션 저하) |
+
+**badge 집계·톤 규칙 (목록)**
+- 개수 badge는 **high + medium만 집계**한다. **low는 집계 제외**(과장된 숫자 방지).
+- badge **톤:** high가 1개 이상이면 **burgundy**, 없으면 **amber**.
+- low만 있는 경우: 개수 badge 미표시, 회색 "참고" 인디케이터(작은 점)만.
+- 위험신호 0개: 미표시.
+
+**상세 표시**
+- 항목별 카드로 **무엇을·왜** 서술. 진단 표현 금지. 예) "수면 거의 못 함 — 상담 시 확인 권장."
+- 정렬: high → medium → low. high/medium은 해당 틴트 카드, low는 중립 틴트.
+- `binge_guilt` 등 섭식 관련 항목은 특히 진단처럼 보이지 않게(라벨 그대로 + 중립 서술).
+
+**severity 파생·폴백 (필수)**
+- severity는 **저장값이 아니라 UI 레이어의 정적 `code→severity` 매핑으로 파생**한다(위 표 = 매핑 정의). `computeRiskFlags`·타입·DB는 변경하지 않는다.
+- 매핑에 없는 code(예: 추후 추가된 신규 code)는 **medium(amber)로 표시**한다. high로 올리지 말 것(과경고), low로 내리지 말 것(누락).
+
+**불변 원칙**
+- 강한 빨강 금지(최고 등급도 burgundy). **위험신호는 환자 화면에 절대 노출하지 않는다.**
+
+### G-4. 상세 페이지 (`/admin/responses/[id]`)
+
+**섹션 순서 — 코드 `DASHBOARD_SECTION_ORDER`(sections.ts:70–86) 바인딩 + UI 주입 2블록:**
+
+1. **(주입) 상단 sticky 요약 바**
+2. **(주입) 위험신호 요약** — 요약 바 바로 아래
+3. 기본정보(basic) → 4. 동의 상태(consent) → 5. 방문 동기와 목표(goal) → 6. 신체 계측·BMI(body_metrics) → 7. 건강 이력·복약·알레르기(medical) → 8. 생활 습관(lifestyle) → 9. 가족력(family) → 10. 여성 건강(female, 조건부) → 11. 수면(sleep) → 12. 식사(meal) → 13. 음주·카페인(alcohol_caffeine) → 14. 수분(hydration) → 15. 몸의 신호(body_signal) → 16. 다이어트 이력(diet_history) → 17. 마지막 자유 서술(final)
+18. **(주입) 관리자 작업 영역** — 맨 아래(§G-5)
+
+- **sticky 요약 바:** 환자명 · 성별/나이 · 현재 체중/BMI(§0 구간 라벨) · status badge · 위험신호 개수. 스크롤 고정, 낮은 높이.
+- **accordion 기본 오픈:** 위험신호 요약, 방문 동기와 목표(goal), 신체 계측(body_metrics), 건강 이력(medical). 나머지 접힘.
+- **raw answer:** JSON 금지, **"질문–답변" 라벨 카드**. 빈 답은 "응답 없음"(`text-subtle`).
+- **민감정보는 상세에서만**, 마스킹 기본(§J). **RRN은 `rrn_mask`만**(전체 표시 금지).
+- ⚠️ 현행 라우트가 `DASHBOARD_SECTION_ORDER`와 다른 순서로 렌더 중이면, 이 순서에 맞춘다(코드 정렬은 구현 단계 작업).
+
+### G-5. 관리자 작업 영역 (상세 하단)
+
+- **수정 가능 필드는 `status`, `admin_memo` 둘뿐**(§0). 그 외 모든 필드는 읽기 전용으로 표시.
+- ⚠️ **현행 구현 전환 사항:** 기존에는 목록의 즉시 저장 드롭다운(`StatusDropdown`)으로 status를 바로 바꿀 수 있었다. v2는 이를 **제거**하고, status 변경 기능을 **상세 페이지(여기, §G-5)로 단일화**한다. 목록은 §G-2대로 읽기 전용 badge만 표시한다.
+- **status 변경 — 전이 규칙 바인딩(§0).** 자유 드롭다운 금지. **현재 status에서 갈 수 있는 값만 노출**한다.
+  - 신규 제출 → {상담 예정, 보류·취소}
+  - 상담 예정 → {상담 완료, 신규 제출, 보류·취소}
+  - 상담 완료 → {신규 제출, 보류·취소}
+  - 보류·취소 → {신규 제출}
+- **즉시 저장 금지.** '저장' 명시 클릭 필요. 변경 후 저장 전 "변경됨 · 미저장" 표시(실수 방지).
+- **admin_memo:** 넓은 멀티라인(최소 5줄) 자동 확장, 14–15px, 줄높이 1.6.
+- **저장 버튼:** 차콜 채움, 변경 없으면 disabled.
+- **저장 완료:** Muted Sage 인라인 "저장되었습니다."(2–3초).
+- **저장 실패:** "저장에 실패했습니다. 잠시 후 다시 시도해주세요." 입력값 유지. *(§0-1 admin_memo grant 이슈로 실제 실패 가능 → 이 UX 필수.)*
+- **관리자 전용 명시:** "관리자 전용 · 환자에게 보이지 않습니다."(`text-muted`).
+
+---
+
+## H. 컴포넌트별 스타일 가이드 (요약 레퍼런스)
+
+| 컴포넌트 | 핵심 규칙 |
+|---|---|
+| Button(주) | 차콜 채움, 흰 텍스트, 반경 10px, 높이 48px(모바일). 골드 채움 금지. |
+| Button(보조) | 투명 + `border`, 텍스트 `text`. |
+| Input/Textarea | `surface` + `border`, 반경 10px, 높이 48px+, 폰트 16px, focus 골드 ring. |
+| Radio/Checkbox 카드 | 전체 터치, 선택 시 `border-strong`+골드 헤어라인+옅은 채움, 체크 골드. |
+| Badge(status) | pill, 틴트, 11–12px/600. 완료=sage, 진행=info, 보류·취소=subtle. |
+| Badge(위험신호) | severity 틴트(high=burgundy / medium=amber / low=중립). 개수형은 high+medium만. |
+| Card | `surface`, 반경 12–16px, soft shadow 1단계, 패딩 20/28. |
+| Accordion | 헤더 전체 클릭, 화살표 회전 1단계, 핵심 섹션 기본 오픈. |
+| Sticky bar | 낮은 높이, `surface`+하단 헤어라인, 고정. |
+| Progress bar | 높이 3–4px, 트랙 `surface-muted`, 채움 `gold-muted`, 숫자 없음. |
+| Table(Admin) | 헤더 `text-muted`, 골드 헤어라인, 얼터네이트 행, 13–14px. |
+| Status select | 전이 규칙 따라 허용값만 노출, 명시 저장. |
+| Toast | 인라인 우선, sage(성공)/amber(주의), 자동 소멸. |
+
+---
+
+## I. 오류/검증 메시지 톤 가이드
+
+- 공통: 짧게·부드럽게·다음 행동만. 탓하지 않기.
+- 환자: F-5 문구. danger/빨강/공포 금지.
+- Admin: 사실 위주, 계정/데이터 존재 여부 비노출.
+- 빈 상태: "아직 제출된 설문이 없습니다." / "조건에 맞는 응답이 없습니다."
+- 로딩: 스피너보다 **스켈레톤**. 골드 반짝임 금지.
+- disabled: 명도 낮추되 대비 유지.
+
+---
+
+## J. 마스킹/보안 표시 가이드 (실측 포맷)
+
+| 데이터 | 목록 | 상세 | 규칙 |
+|---|---|---|---|
+| 환자명 | 전체 | 전체 | 상담 식별 |
+| 연락처 | `010-****-5678` | `010-****-5678` | 원문 노출 금지 |
+| 주민등록번호 | **미표시** | **`901010-1******`(`rrn_mask`만)** | **전체 노출 금지.** 복호화 UI 범위 외 |
+| 기타 민감정보 | 미표시 | 상세에서만, 필요 시 마스킹 | |
+| 위험신호 | 개수 badge | 항목 설명 | **환자 화면 비노출** |
+| admin_memo | 유무만 | 전체 | **환자 화면 비노출**, 관리자 전용 |
+
+- **목록 = 최소 노출, 상세 = 기본 마스킹.** 노출은 항상 의도적.
+- **PDF/인쇄 버튼:** 자리만 예약(범위 외, §0-1). 개인정보 포함 화면에 "화면 캡처·인쇄 주의" 미세 안내 영역 고려.
+- ⚠️ 마스킹 함수 2벌(admin/utils.ts: null→`-` / survey/mask.ts: null 미처리) — 명세상 표시 포맷은 `010-****-5678` 단일. null 처리 차이는 구현 단계에서 통일.
+
+---
+
+## K. 반응형 / 접근성 가이드
+
+- 모바일 우선, 한 손 작성 기준.
+- 터치 영역 최소 44×44px(radio/checkbox는 카드 전체).
+- 입력 높이 48px+, 모바일 폰트 16px 고정.
+- 키보드 이동: 논리적 tab 순서, 조건부 필드도 순서 편입, accordion 포커스 처리.
+- focus: 골드 ring 2px, 색만으로 상태 구분 금지(아이콘/텍스트 병행).
+- 대비: 본문 AA(4.5:1)+. `text-subtle`은 비핵심에만.
+- 오류 접근성: 입력과 프로그램적 연결, 색 의존 금지.
+- 긴 선택지: 줄바꿈 허용(말줄임/가로 잘림 금지).
+- Admin table→card 전환(~768px↓): 카드당 환자명·제출일·status·위험신호 개수·목표 요약 우선.
+
+---
+
+## L. 금지 스타일 (명시적)
+
+- Google Form 기본 느낌(밋밋한 라디오, 보라 액센트).
+- 저가형 다이어트 광고(비포애프터, 숫자 강조, 자극 카피).
+- 강한 빨강 경고 UI.
+- 병원 EMR식 차갑고 빽빽한 화면, 파랑/초록 중심 팔레트.
+- 약재 사진·한약방·붓글씨·한자 장식·전통 갈색.
+- 과한 금박/반짝임/그라데이션 골드.
+- 과도한 애니메이션, 진행률 숫자 압박.
+- 위험/질병 진단처럼 보이는 환자 화면 문구·아이콘.
+- 민감정보(연락처 원문·RRN·메모)를 목록에 노출.
+
+---
+
+## M. Claude Code 구현용 요약
+
+**토큰 (임의값 금지)**
+- 색: bg `#F4EFE6` / surface `#FDFBF7` / surface-muted `#ECE6DA` / text `#232019` / text-muted `#756E62` / text-subtle `#9A9284` / border `#E3DCCF` / border-strong `#CFC6B5` / gold `#B69A63` / gold-muted `#DCCDA9` / gold-hairline `#E8DCC2` / danger-soft `#7A444B`(bg `#F3E4E2`) / warning-soft `#8A6225`(bg `#F5EAD6`) / info-soft `#5C5A52`(bg `#EFEBE2`) / success-soft `#4F6349`(bg `#E6EBE0`)
+- 간격 4/8/12/16/24/32/48 · 반경 input·button 10/card 12–16/badge 999
+- 폰트: 본문 Pretendard, 제목 Noto Serif KR, 폴백 명시 · 입력 16px 고정 · 터치 44px+ · focus 골드 ring 2px
+
+**구조 바인딩 (§0 — 절대 임의 변경 금지)**
+- status 4값: 신규 제출(default)/상담 예정/상담 완료/보류·취소 + 전이 규칙(§G-5)
+- 설문 입력 순서 / 대시보드 열람 순서는 §0 키 그대로
+- 상세 라우트 = `/admin/responses/[id]`
+- 마스킹: phone `010-****-5678`, rrn `901010-1******`(rrn_mask)
+- 수정 가능 컬럼 = status, admin_memo 뿐
+- 여성 게이트 `basic_sex=="여성"`, 출산 게이트 `basic_birth_count!="없음"`
+- BMI: <18.5 저체중/<23 정상/<25 과체중/≥25 비만
+
+**환자 설문**
+- 1화면=1섹션, 6챕터, 진행바 숫자 X, 하단 sticky, 다음=차콜 채움
+- 조건부 게이트 실제 조건 사용, 미해당 렌더 제외
+- 오류 부드러운 톤, 위험신호·메모 환자 화면 절대 비노출
+
+**Admin**
+- 목록: 마스킹·status 틴트 badge·위험신호 개수(high+medium만)·memo 유무
+- 위험신호 severity 3단계(high=burgundy/medium=amber/low=중립), low 미집계, severity 없으면 medium 폴백
+- 상세: sticky 요약 → 위험신호 → §0 섹션 순서 → 관리자 작업영역, 질문–답변 카드, RRN은 rrn_mask
+- status 변경은 전이 허용값만 + 명시 저장, 저장 실패 UX 필수(grant 이슈)
+
+**전역 금지:** 빨강 경고 / 골드 과다 / 한방·약재 무드 / 과한 모션 / 진단 표현 / 목록 민감정보 노출
+
+---
+
+## N. 우선 적용 순서
+
+1. **디자인 토큰 확정** — 색·타이포·간격·반경·폰트 로딩.
+2. **공통 프리미티브** — Button, Input, Textarea, Card, Badge, focus ring, 타입 스케일.
+3. **환자 설문 셸** — 섹션 카드, 진행바, sticky 이전/다음, 6챕터.
+4. **문항 컴포넌트** — choice 카드, yes_no, number, time, scale_grid 분해, 조건부 게이트(실제 조건).
+5. **환자 설문 적용** — intro → 15섹션 → 검증/오류 → 완료.
+6. **Admin 셸 & 로그인.**
+7. **Admin 목록** — 테이블+모바일 카드, 마스킹, status·위험신호 badge, 필터/검색.
+8. **Admin 상세** — sticky 요약, 위험신호 severity, §0 섹션 순서, accordion, 질문–답변 카드.
+9. **관리자 작업 영역** — 전이 기반 status select, memo, 명시 저장, 성공/실패 피드백.
+10. **상태·엣지·접근성 마감** — 스켈레톤/empty/error, severity 폴백, 대비·키보드·포커스.
+
+> 토큰 → 프리미티브 → 환자 → 관리자 → 마감. §0 구조 바인딩 값은 구현 내내 단일 진실 소스로 참조하고, 디자인을 맞추려 코드/스키마/RLS를 바꾸지 않는다.
