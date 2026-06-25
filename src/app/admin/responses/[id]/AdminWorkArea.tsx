@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { updateResponseStatus } from "../../actions";
 import type { UpdateResponseState } from "../../actions";
 import type { ResponseStatus } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   responseId: string;
@@ -11,95 +12,74 @@ interface Props {
   currentMemo: string | null;
 }
 
-export default function AdminWorkArea({
-  responseId,
-  currentStatus,
-  currentMemo,
-}: Props) {
+export default function AdminWorkArea({ responseId, currentStatus, currentMemo }: Props) {
   const [state, action, isPending] = useActionState<UpdateResponseState, FormData>(
     updateResponseStatus,
     null,
   );
 
   const [memo, setMemo] = useState(currentMemo ?? "");
-  const [isDirty, setIsDirty] = useState(false);
+  const isDirty = memo !== (currentMemo ?? "");
 
-
-  // Warn on navigate away when unsaved
+  // 페이지 이탈 경고
   useEffect(() => {
     if (!isDirty) return;
-    const handle = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
+    const handle = (e: BeforeUnloadEvent) => { e.preventDefault(); };
     window.addEventListener("beforeunload", handle);
     return () => window.removeEventListener("beforeunload", handle);
   }, [isDirty]);
 
   return (
-    <div>
-      <form action={action} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <input type="hidden" name="responseId" value={responseId} />
-        {/* 상태는 목록에서 변경한다. 메모 저장 시 기존 상태를 유지하기 위해 함께 전송. */}
-        <input type="hidden" name="status" value={currentStatus} />
+    <form action={action} className="adm-work-area">
+      {/* status는 메모 저장 시 현재값 유지 */}
+      <input type="hidden" name="responseId" value={responseId} />
+      <input type="hidden" name="status" value={currentStatus} />
 
-        {/* Memo */}
-        <div>
-          <label style={{ display: "block", fontSize: 13, color: "var(--grey)", marginBottom: 6 }}>
-            관리자 메모
-          </label>
-          <textarea
-            name="adminMemo"
-            value={memo}
-            onChange={(e) => {
-              setMemo(e.target.value);
-              setIsDirty(true);
-            }}
-            rows={5}
-            placeholder="상담 전 확인 사항, 특이 이력 등을 기록하세요."
-            style={{
-              width: "100%",
-              border: "1px solid var(--line)",
-              borderRadius: 4,
-              padding: "10px 12px",
-              fontSize: 13,
-              background: "var(--paper)",
-              color: "var(--ink)",
-              resize: "vertical",
-              lineHeight: 1.6,
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
+      <div className="adm-work-header">
+        <span className="adm-work-admin-tag">관리자 전용</span>
+        <span style={{ fontSize: "var(--text-helper)", color: "var(--color-text-subtle)" }}>
+          상태 변경은 목록에서 처리합니다
+        </span>
+      </div>
 
-        {state?.error && (
-          <p style={{ fontSize: 13, color: "var(--error)" }}>{state.error}</p>
+      {/* 메모 */}
+      <div>
+        <label htmlFor="work-memo" className="adm-work-field-label">
+          관리자 메모
+        </label>
+        <textarea
+          id="work-memo"
+          name="adminMemo"
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          rows={5}
+          placeholder="상담 전 확인 사항, 특이 이력 등을 기록하세요."
+          className="ui-textarea"
+        />
+      </div>
+
+      {/* 피드백 */}
+      {state?.error && (
+        <div className="adm-save-error" role="alert">{state.error}</div>
+      )}
+      {state?.success && !isDirty && (
+        <p className="adm-save-success" role="status">✓ 저장되었습니다</p>
+      )}
+
+      <div className="adm-work-actions">
+        <Button
+          type="submit"
+          variant={isDirty ? "primary" : "ghost"}
+          disabled={isPending || !isDirty}
+        >
+          {isPending ? "저장 중…" : "저장하기"}
+        </Button>
+        {isDirty && (
+          <span className="adm-dirty-indicator" aria-live="polite">
+            변경됨 · 미저장
+          </span>
         )}
-        {state?.success && !isDirty && (
-          <p style={{ fontSize: 13, color: "#059669" }}>저장되었습니다.</p>
-        )}
-
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            type="submit"
-            disabled={isPending || !isDirty}
-            style={{
-              padding: "9px 20px",
-              background: isDirty ? "var(--ink)" : "var(--line)",
-              color: isDirty ? "var(--paper)" : "var(--grey)",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 13,
-              cursor: isPending || !isDirty ? "not-allowed" : "pointer",
-              transition: "background 0.15s",
-            }}
-          >
-            {isPending ? "저장 중…" : "메모 저장"}
-          </button>
-          {isDirty && (
-            <span style={{ fontSize: 12, color: "var(--grey)" }}>미저장 변경사항이 있습니다</span>
-          )}
-        </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }

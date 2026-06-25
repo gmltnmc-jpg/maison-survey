@@ -7,6 +7,7 @@ import { isQuestionVisible, isSectionVisible } from "@/lib/survey/conditions";
 import { validateSection } from "@/lib/survey/validation";
 import type { Answers, AnswerValue, SurveyQuestion } from "@/lib/survey/types";
 import { Button } from "@/components/ui/Button";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 
 const OTHER = "__other__";
 
@@ -216,18 +217,7 @@ export default function SurveyForm() {
       {/* 헤더 */}
       <div className="survey-header">
         <p className="survey-brand">Maison de Balance</p>
-        <p className="survey-progress-label">{chapter?.name}</p>
-        <div
-          className="ui-progress-track"
-          role="progressbar"
-          aria-valuenow={progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={chapter?.name ?? "진행률"}
-          style={{ marginTop: 8 }}
-        >
-          <div className="ui-progress-fill" style={{ width: `${progressPct}%` }} />
-        </div>
+        <ProgressBar value={progressPct} chapterLabel={chapter?.name} />
         <div className="survey-gold-line" aria-hidden="true" />
       </div>
 

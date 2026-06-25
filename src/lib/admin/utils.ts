@@ -81,28 +81,37 @@ export const STATUS_BADGE: Record<
   "신규 제출": {
     bg:     "var(--color-info-soft-bg)",
     color:  "var(--color-info-soft)",
-    border: "var(--color-border)",
+    border: "var(--color-info-soft)",
   },
   "상담 예정": {
-    bg:     "var(--color-info-soft-bg)",
-    color:  "var(--color-info-soft)",
-    border: "var(--color-border)",
+    bg:     "var(--color-warning-soft-bg)",
+    color:  "var(--color-warning-soft)",
+    border: "var(--color-warning-soft)",
   },
   "상담 완료": {
     bg:     "var(--color-success-soft-bg)",
     color:  "var(--color-success-soft)",
-    border: "var(--color-border)",
+    border: "var(--color-success-soft)",
   },
   "보류·취소": {
     bg:     "var(--color-surface-muted)",
     color:  "var(--color-text-muted)",
-    border: "var(--color-border)",
+    border: "var(--color-text-muted)",
   },
 };
 
+/** 텍스트 색만 (레거시 호환) */
 export const BMI_COLOR: Record<BmiLevel, string> = {
   low:     "var(--color-info-soft)",
   normal:  "var(--color-success-soft)",
   caution: "var(--color-warning-soft)",
   high:    "var(--color-danger-soft)",
+};
+
+/** bg + border + text 칩 스타일 (목록·상세 공용) */
+export const BMI_CHIP: Record<BmiLevel, { bg: string; color: string; border: string }> = {
+  low:     { bg: "var(--color-info-soft-bg)",    color: "var(--color-info-soft)",    border: "var(--color-info-soft)" },
+  normal:  { bg: "var(--color-success-soft-bg)", color: "var(--color-success-soft)", border: "var(--color-success-soft)" },
+  caution: { bg: "var(--color-warning-soft-bg)", color: "var(--color-warning-soft)", border: "var(--color-warning-soft)" },
+  high:    { bg: "var(--color-danger-soft-bg)",  color: "var(--color-danger-soft)",  border: "var(--color-danger-soft)" },
 };

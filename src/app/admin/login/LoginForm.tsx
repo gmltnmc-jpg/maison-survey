@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { signIn, type SignInState } from "../actions";
+import { Button } from "@/components/ui/Button";
 
 export default function LoginForm() {
   const [state, action, isPending] = useActionState<SignInState, FormData>(
@@ -11,71 +12,49 @@ export default function LoginForm() {
 
   return (
     <form action={action} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <label htmlFor="email" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
-          이메일
-        </label>
+      <div className="ui-field">
+        <label htmlFor="email" className="ui-field-label">이메일</label>
         <input
           id="email"
           name="email"
           type="email"
           required
           autoComplete="email"
-          style={{
-            border: "1px solid var(--line)",
-            borderRadius: 4,
-            padding: "10px 12px",
-            fontSize: 14,
-            background: "var(--paper)",
-            color: "var(--ink)",
-            outline: "none",
-          }}
+          className="ui-input"
+          aria-describedby={state?.error ? "login-error" : undefined}
         />
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <label htmlFor="password" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
-          비밀번호
-        </label>
+      <div className="ui-field">
+        <label htmlFor="password" className="ui-field-label">비밀번호</label>
         <input
           id="password"
           name="password"
           type="password"
           required
           autoComplete="current-password"
-          style={{
-            border: "1px solid var(--line)",
-            borderRadius: 4,
-            padding: "10px 12px",
-            fontSize: 14,
-            background: "var(--paper)",
-            color: "var(--ink)",
-            outline: "none",
-          }}
+          className="ui-input"
+          aria-describedby={state?.error ? "login-error" : undefined}
         />
       </div>
 
       {state?.error && (
-        <p style={{ fontSize: 13, color: "var(--error)" }}>{state.error}</p>
+        <p
+          id="login-error"
+          role="alert"
+          style={{ fontSize: 13, color: "var(--color-warning-soft)" }}
+        >
+          {state.error}
+        </p>
       )}
 
-      <button
+      <Button
         type="submit"
         disabled={isPending}
-        style={{
-          marginTop: 8,
-          background: "var(--ink)",
-          color: "var(--paper)",
-          border: "none",
-          borderRadius: 4,
-          padding: "12px",
-          fontSize: 14,
-          cursor: isPending ? "not-allowed" : "pointer",
-          opacity: isPending ? 0.6 : 1,
-        }}
+        style={{ marginTop: 8, width: "100%" }}
       >
         {isPending ? "로그인 중…" : "로그인"}
-      </button>
+      </Button>
     </form>
   );
 }

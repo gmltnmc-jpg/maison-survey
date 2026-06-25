@@ -18,8 +18,8 @@
   --color-danger-soft-bg:  #F3E4E2;
   --color-warning-soft:    #8A6225;
   --color-warning-soft-bg: #F5EAD6;
-  --color-info-soft:       #5C5A52;
-  --color-info-soft-bg:    #EFEBE2;
+  --color-info-soft:       #3D6479;
+  --color-info-soft-bg:    #E0EBF2;
   --color-success-soft:    #4F6349;
   --color-success-soft-bg: #E6EBE0;
 
@@ -121,11 +121,6 @@ button {
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--color-gold);
-}
-.survey-progress-label {
-  margin-top: 12px;
-  font-size: var(--text-helper);
-  color: var(--color-text-muted);
 }
 .survey-gold-line {
   width: 100%;
@@ -780,4 +775,357 @@ button {
   z-index: 20;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-gold-hairline);
+}
+
+/* ================================================================
+   어드민 대시보드 UI (Phase 4)
+   ================================================================ */
+
+/* ── 어드민 레이아웃 ─────────────────────────────────────────── */
+.adm-wrap { min-height: 100vh; background: var(--color-bg); }
+.adm-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.adm-header-brand {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin-bottom: 2px;
+}
+.adm-header-sub {
+  font-size: var(--text-admin);
+  color: var(--color-text-muted);
+}
+.adm-main { padding: 28px 32px; }
+
+/* ── 로그인 카드 ─────────────────────────────────────────────── */
+.adm-login-wrap {
+  min-height: 100vh;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.adm-login-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 44px 40px;
+  width: 100%;
+  max-width: 400px;
+}
+.adm-login-brand {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin-bottom: 4px;
+}
+.adm-login-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 32px;
+}
+.adm-login-notice {
+  font-size: var(--text-helper);
+  color: var(--color-warning-soft);
+  background: var(--color-warning-soft-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  line-height: var(--leading-label);
+}
+
+/* ── 필터 바 ─────────────────────────────────────────────────── */
+.adm-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.adm-filter-pill {
+  font-size: 12px;
+  font-family: var(--sans);
+  padding: 5px 12px;
+  border-radius: var(--radius-badge);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.1s, color 0.1s;
+  min-height: 32px;
+  white-space: nowrap;
+  line-height: 1;
+}
+.adm-filter-pill:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+.adm-filter-pill-active {
+  border-color: var(--color-text) !important;
+  background: var(--color-text);
+  color: var(--color-surface) !important;
+}
+.adm-filter-reset {
+  background: none;
+  border: none;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  min-height: 32px;
+  transition: color 0.15s;
+}
+.adm-filter-reset:hover { color: var(--color-text); }
+
+/* ── 테이블 ──────────────────────────────────────────────────── */
+.adm-table-wrap { overflow-x: auto; }
+.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-admin);
+}
+.adm-table thead tr {
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+.adm-table th {
+  padding: 9px 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.adm-table td {
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+.adm-row { cursor: pointer; }
+.adm-row:hover td { background: var(--color-surface-muted); }
+.adm-cell-muted { color: var(--color-text-muted); }
+.adm-cell-nowrap { white-space: nowrap; }
+.adm-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-top: 64px;
+  font-size: 14px;
+}
+
+/* 상태 select (목록) */
+.adm-status-select {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 22px 4px 9px;
+  border-radius: var(--radius-badge);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23756E62' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  transition: opacity 0.15s;
+}
+
+/* 모바일 카드 전환 */
+@media (max-width: 640px) {
+  .adm-table-wrap { overflow-x: visible; }
+  .adm-table { display: block; }
+  .adm-table thead { display: none; }
+  .adm-table tbody { display: block; }
+  .adm-table tr.adm-row {
+    display: block;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    margin-bottom: 12px;
+    background: var(--color-surface);
+    padding: 12px 14px;
+  }
+  .adm-table tr.adm-row:hover { background: var(--color-surface-muted); }
+  .adm-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: none;
+    font-size: 13px;
+  }
+  .adm-table td[data-label]::before {
+    content: attr(data-label);
+    font-size: 11px;
+    color: var(--color-text-subtle);
+    flex-shrink: 0;
+    margin-right: 12px;
+    min-width: 56px;
+  }
+  .adm-td-detail { display: none !important; }
+}
+
+/* ── 상세 페이지 ─────────────────────────────────────────────── */
+.adm-detail-wrap { max-width: 820px; }
+.adm-back-link {
+  font-size: var(--text-admin);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s;
+}
+.adm-back-link:hover { color: var(--color-text); }
+.adm-sticky-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-gold-hairline);
+  padding: 12px 0;
+  margin-top: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.adm-sticky-name {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.adm-sticky-meta { font-size: var(--text-admin); color: var(--color-text-muted); }
+
+/* Field */
+.adm-field {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  font-size: var(--text-memo);
+  margin-bottom: 10px;
+  align-items: baseline;
+}
+.adm-field-label { color: var(--color-text-muted); font-size: var(--text-admin); }
+.adm-field-value { color: var(--color-text); line-height: var(--leading-body); }
+.adm-subheading {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-gold-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 18px 0 10px;
+}
+
+/* Metric cards */
+.adm-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.adm-metric-card {
+  padding: 14px 16px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.adm-metric-label { font-size: 11px; color: var(--color-text-muted); margin-bottom: 4px; }
+.adm-metric-value { font-size: 17px; font-weight: 600; color: var(--color-text); }
+
+/* Risk items */
+.adm-risk-list { display: flex; flex-direction: column; gap: 8px; }
+.adm-risk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-input);
+  border: 1px solid var(--color-border);
+}
+.adm-risk-text { display: flex; flex-direction: column; gap: 3px; }
+.adm-risk-label { font-size: var(--text-admin); font-weight: 500; color: var(--color-text); }
+.adm-risk-hint { font-size: 12px; color: var(--color-text-muted); line-height: var(--leading-label); }
+
+/* ── 관리자 작업 영역 ─────────────────────────────────────────── */
+.adm-work-area { display: flex; flex-direction: column; gap: 18px; }
+.adm-work-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+.adm-work-admin-tag {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  background: var(--color-surface-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-badge);
+  border: 1px solid var(--color-border);
+}
+.adm-work-field-label {
+  display: block;
+  font-size: var(--text-admin);
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.adm-work-status-select {
+  height: 44px;
+  padding: 0 36px 0 14px;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23756E62' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+    no-repeat right 10px center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  max-width: 260px;
+  width: 100%;
+}
+.adm-work-status-select:focus {
+  outline: none;
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 0 3px var(--color-gold-hairline);
+}
+.adm-work-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.adm-dirty-indicator { font-size: 12px; color: var(--color-warning-soft); }
+.adm-save-success { font-size: var(--text-admin); color: var(--color-success-soft); }
+.adm-save-error {
+  font-size: var(--text-admin);
+  color: var(--color-danger-soft);
+  background: var(--color-danger-soft-bg);
+  padding: 10px 14px;
+  border-radius: var(--radius-input);
+  line-height: var(--leading-label);
 }

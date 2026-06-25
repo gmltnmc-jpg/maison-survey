@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { searchByName, updateResponseStatus } from "./actions";
 import type { PatientRow, PatientInfo } from "./actions";
@@ -8,23 +9,27 @@ import type { ResponseStatus } from "@/lib/types";
 import {
   calcAgeFromRrnMask,
   bmiCategory,
-  summarizeRiskFlags,
   allowedNextStatus,
   STATUS_BADGE,
-  BMI_COLOR,
+  BMI_CHIP,
 } from "@/lib/admin/utils";
+import { summarizeRiskSeverity } from "@/lib/admin/riskMeta";
+import { RiskCountBadge } from "@/components/ui/Badge";
 
 function getPatient(row: PatientRow): PatientInfo | null {
   if (!row.patients) return null;
   return Array.isArray(row.patients) ? row.patients[0] : row.patients;
 }
 
-const FALLBACK_BADGE = { bg: "#F9FAFB", color: "#6B7280", border: "#E5E7EB" };
+const FALLBACK_BADGE = {
+  bg: "var(--color-surface-muted)",
+  color: "var(--color-text-muted)",
+  border: "var(--color-border)",
+};
 
 /**
- * Inline status selector. Changing the value calls updateResponseStatus
- * immediately (no save button). admin_memo is preserved by passing the row's
- * existing memo. On failure the value reverts and an inline error is shown.
+ * 목록용 즉시 저장 상태 드롭다운.
+ * admin_memo는 기존 값 유지, status만 변경.
  */
 function StatusDropdown({
   responseId,
@@ -39,8 +44,6 @@ function StatusDropdown({
   const [error, setError] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-
-  // Current status is always selectable; allowedNextStatus never includes it.
   const options: ResponseStatus[] = [status, ...allowedNextStatus(status)];
   const badge = STATUS_BADGE[value] ?? FALLBACK_BADGE;
 
@@ -68,38 +71,42 @@ function StatusDropdown({
         value={value}
         onChange={handleChange}
         disabled={isPending}
+        className="adm-status-select"
         style={{
-          fontSize: 11,
-          fontWeight: 500,
-          padding: "3px 8px",
-          borderRadius: 10,
-          background: badge.bg,
+          backgroundColor: badge.bg,
           color: badge.color,
-          border: `1px solid ${badge.border}`,
-          cursor: isPending ? "wait" : "pointer",
+          borderColor: badge.border,
           opacity: isPending ? 0.6 : 1,
-          appearance: "none",
-          WebkitAppearance: "none",
-          whiteSpace: "nowrap",
+          cursor: isPending ? "wait" : "pointer",
         }}
       >
         {options.map((s) => (
-          <option key={s} value={s} style={{ color: "var(--ink)", background: "var(--paper)" }}>
+          <option
+            key={s}
+            value={s}
+            style={{ color: "var(--color-text)", background: "var(--color-surface)" }}
+          >
             {s}
           </option>
         ))}
       </select>
       {error && (
-        <span style={{ fontSize: 10, color: "var(--error)" }}>상태 변경에 실패했습니다</span>
+        <span style={{ fontSize: 10, color: "var(--color-warning-soft)" }}>
+          변경에 실패했습니다
+        </span>
       )}
     </div>
   );
 }
 
 function ResponseRow({ row }: { row: PatientRow }) {
+  const router = useRouter();
   const patient = getPatient(row);
   const age = calcAgeFromRrnMask(patient?.rrn_mask);
-  const { count: riskCount } = summarizeRiskFlags(row.risk_flags);
+
+  const riskFlags = Array.isArray(row.risk_flags) ? row.risk_flags : [];
+  const { highCount, mediumCount } = summarizeRiskSeverity(riskFlags);
+
   const bmi = row.bmi;
   const bmiInfo = bmi != null ? bmiCategory(bmi) : null;
 
@@ -112,14 +119,18 @@ function ResponseRow({ row }: { row: PatientRow }) {
   });
 
   const goalText = row.primary_goal_text
-    ? row.primary_goal_text.length > 30
-      ? row.primary_goal_text.slice(0, 30) + "…"
+    ? row.primary_goal_text.length > 28
+      ? row.primary_goal_text.slice(0, 28) + "…"
       : row.primary_goal_text
     : "—";
 
   return (
-    <tr style={{ borderBottom: "1px solid var(--line)" }}>
-      <td style={{ padding: "10px 10px" }}>
+    <tr
+      className="adm-row"
+      onClick={() => router.push(`/admin/responses/${row.id}`)}
+    >
+      {/* 상태 드롭다운 클릭 시 행 이동 방지 */}
+      <td data-label="상태" onClick={(e) => e.stopPropagation()}>
         <StatusDropdown
           key={`${row.id}-${row.status}`}
           responseId={row.id}
@@ -127,78 +138,79 @@ function ResponseRow({ row }: { row: PatientRow }) {
           adminMemo={row.admin_memo}
         />
       </td>
-      <td style={{ padding: "10px 10px", fontSize: 12, color: "var(--grey)", whiteSpace: "nowrap" }}>
+
+      <td data-label="제출일" className="adm-cell-muted adm-cell-nowrap">
         {dateStr}
       </td>
-      <td style={{ padding: "10px 10px", fontWeight: 500 }}>
+
+      <td data-label="환자명" style={{ fontWeight: 500 }}>
         {patient?.name ?? "—"}
       </td>
-      <td style={{ padding: "10px 10px", fontSize: 13, color: "var(--ink-soft)" }}>
+
+      <td data-label="성별" className="adm-cell-muted">
         {patient?.sex ?? "—"}
       </td>
-      <td style={{ padding: "10px 10px", fontSize: 13, color: "var(--ink-soft)" }}>
+
+      <td data-label="나이" className="adm-cell-muted">
         {age != null ? `${age}세` : "—"}
       </td>
+
       <td
-        style={{
-          padding: "10px 10px",
-          fontSize: 13,
-          color: "var(--ink-soft)",
-          maxWidth: 200,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
+        data-label="상담 목표"
+        className="adm-cell-muted"
+        style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
       >
         {goalText}
       </td>
-      <td style={{ padding: "10px 10px", fontSize: 13 }}>
+
+      <td data-label="BMI">
         {bmi != null && bmiInfo ? (
-          <span style={{ color: BMI_COLOR[bmiInfo.level], fontWeight: 500 }}>
-            {bmi} <span style={{ fontSize: 11, fontWeight: 400 }}>({bmiInfo.label})</span>
+          <span style={{
+            display: "inline-flex",
+            padding: "2px 8px",
+            borderRadius: "var(--radius-badge)",
+            fontSize: 11,
+            fontWeight: 600,
+            background: BMI_CHIP[bmiInfo.level].bg,
+            color: BMI_CHIP[bmiInfo.level].color,
+            border: `1px solid ${BMI_CHIP[bmiInfo.level].border}`,
+            whiteSpace: "nowrap",
+          }}>
+            {bmi} ({bmiInfo.label})
           </span>
         ) : (
-          <span style={{ color: "var(--grey)" }}>—</span>
+          <span className="adm-cell-muted">—</span>
         )}
       </td>
-      <td style={{ padding: "10px 10px", textAlign: "center" }}>
-        {riskCount > 0 ? (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 20,
-              height: 20,
-              borderRadius: "50%",
-              background: "#FEE2E2",
-              color: "#DC2626",
-              fontSize: 11,
-              fontWeight: 600,
-            }}
-          >
-            {riskCount}
-          </span>
+
+      <td data-label="확인 항목" style={{ textAlign: "center" }}>
+        {(highCount + mediumCount) > 0 ? (
+          <RiskCountBadge highCount={highCount} mediumCount={mediumCount} />
         ) : (
-          <span style={{ color: "var(--grey)", fontSize: 12 }}>—</span>
+          <span className="adm-cell-muted">—</span>
         )}
       </td>
-      <td style={{ padding: "10px 10px", textAlign: "center", fontSize: 14 }}>
+
+      <td data-label="메모" style={{ textAlign: "center" }}>
         {row.admin_memo ? (
-          <span title="메모 있음" style={{ color: "#D97706" }}>◆</span>
+          <span title="메모 있음" style={{ color: "var(--color-gold)" }}>◆</span>
         ) : (
-          <span style={{ color: "var(--grey)" }}>◇</span>
+          <span className="adm-cell-muted">◇</span>
         )}
       </td>
-      <td style={{ padding: "10px 10px" }}>
+
+      <td
+        className="adm-td-detail"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Link
           href={`/admin/responses/${row.id}`}
           style={{
             fontSize: 12,
             padding: "4px 10px",
-            border: "1px solid var(--line)",
+            border: "1px solid var(--color-border)",
             borderRadius: 4,
-            color: "var(--ink)",
+            color: "var(--color-text)",
             textDecoration: "none",
             whiteSpace: "nowrap",
           }}
@@ -261,19 +273,15 @@ function syncUrl(filters: Filters) {
 function filterRows(rows: PatientRow[], filters: Filters): PatientRow[] {
   return rows.filter((row) => {
     if (filters.status && row.status !== filters.status) return false;
-
     if (filters.from || filters.to) {
       const created = new Date(row.created_at).getTime();
       if (filters.from) {
-        const from = new Date(`${filters.from}T00:00:00`).getTime();
-        if (created < from) return false;
+        if (created < new Date(`${filters.from}T00:00:00`).getTime()) return false;
       }
       if (filters.to) {
-        const to = new Date(`${filters.to}T23:59:59`).getTime();
-        if (created > to) return false;
+        if (created > new Date(`${filters.to}T23:59:59`).getTime()) return false;
       }
     }
-
     return true;
   });
 }
@@ -323,30 +331,26 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
 
   return (
     <>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+      {/* 필터 바 */}
+      <div className="adm-filters">
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {STATUS_FILTERS.map((s) => {
-            const active = filters.status === s;
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={() => toggleStatus(s)}
-                style={{
-                  fontSize: 12,
-                  padding: "4px 10px",
-                  borderRadius: 10,
-                  border: active ? "1px solid var(--ink)" : "1px solid var(--line)",
-                  cursor: "pointer",
-                  ...(active
-                    ? { background: "var(--ink)", color: "var(--paper)" }
-                    : { background: "var(--cream)", color: "var(--ink-soft)" }),
-                }}
-              >
-                {s}
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            onClick={() => applyFilters({ ...filters, status: undefined })}
+            className={`adm-filter-pill${!filters.status ? " adm-filter-pill-active" : ""}`}
+          >
+            전체
+          </button>
+          {STATUS_FILTERS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => toggleStatus(s)}
+              className={`adm-filter-pill${filters.status === s ? " adm-filter-pill-active" : ""}`}
+            >
+              {s}
+            </button>
+          ))}
 
           <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
             {DATE_FILTERS.map(({ label, days }) => {
@@ -357,16 +361,7 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
                   key={label}
                   type="button"
                   onClick={() => applyDateFilter(days)}
-                  style={{
-                    fontSize: 12,
-                    padding: "4px 10px",
-                    borderRadius: 10,
-                    border: active ? "1px solid var(--ink)" : "1px solid var(--line)",
-                    cursor: "pointer",
-                    ...(active
-                      ? { background: "var(--ink)", color: "var(--paper)" }
-                      : { background: "var(--cream)", color: "var(--ink-soft)" }),
-                  }}
+                  className={`adm-filter-pill${active ? " adm-filter-pill-active" : ""}`}
                 >
                   {label}
                 </button>
@@ -378,21 +373,14 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
             <button
               type="button"
               onClick={() => applyFilters({})}
-              style={{
-                border: "none",
-                background: "transparent",
-                fontSize: 12,
-                color: "var(--grey)",
-                cursor: "pointer",
-                alignSelf: "center",
-              }}
+              className="adm-filter-reset"
             >
               × 초기화
             </button>
           )}
         </div>
 
-        {/* 이름 검색 (서버 액션 — URL 미노출) */}
+        {/* 이름 검색 */}
         <form
           action={searchAction}
           style={{ display: "flex", gap: 6, marginLeft: "auto" }}
@@ -401,28 +389,14 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
             name="name"
             type="text"
             placeholder="이름 검색"
-            style={{
-              border: "1px solid var(--line)",
-              borderRadius: 4,
-              padding: "5px 10px",
-              fontSize: 13,
-              background: "var(--paper)",
-              color: "var(--ink)",
-              width: 140,
-            }}
+            className="ui-input"
+            style={{ width: 140, height: 36, padding: "0 12px" }}
           />
           <button
             type="submit"
             disabled={isSearching}
-            style={{
-              border: "1px solid var(--line)",
-              borderRadius: 4,
-              padding: "5px 12px",
-              fontSize: 13,
-              background: "var(--paper)",
-              cursor: isSearching ? "not-allowed" : "pointer",
-              opacity: isSearching ? 0.6 : 1,
-            }}
+            className="ui-btn ui-btn-ghost"
+            style={{ padding: "0 14px", height: 36, fontSize: 13 }}
           >
             {isSearching ? "…" : "검색"}
           </button>
@@ -430,44 +404,28 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              style={{
-                border: "1px solid var(--line)",
-                borderRadius: 4,
-                padding: "5px 10px",
-                fontSize: 13,
-                background: "var(--paper)",
-                cursor: "pointer",
-                color: "var(--grey)",
-              }}
+              className="ui-btn ui-btn-ghost"
+              style={{ padding: "0 10px", height: 36, fontSize: 13 }}
             >
-              × 검색 해제
+              × 해제
             </button>
           )}
         </form>
       </div>
 
       {(isSearchActive || hasFilters) && (
-        <p style={{ fontSize: 12, color: "var(--grey)", marginBottom: 12 }}>
-          {isSearchActive ? "이름 검색 결과" : "필터 결과"} {rows.length}건
+        <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
+          {isSearchActive ? "이름 검색 결과" : "필터 결과"} — {rows.length}건
         </p>
       )}
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      {/* 테이블 */}
+      <div className="adm-table-wrap">
+        <table className="adm-table">
           <thead>
-            <tr style={{ borderBottom: "2px solid var(--line)", textAlign: "left", background: "var(--cream)" }}>
+            <tr>
               {TABLE_HEADERS.map((h) => (
-                <th
-                  key={h}
-                  style={{
-                    padding: "8px 10px",
-                    fontWeight: 500,
-                    color: "var(--ink-soft)",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {h}
-                </th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -480,9 +438,7 @@ export default function ResponseTable({ initialRows, urlParams }: Props) {
       </div>
 
       {rows.length === 0 && (
-        <p style={{ textAlign: "center", color: "var(--grey)", marginTop: 64, fontSize: 14 }}>
-          아직 제출된 설문이 없습니다.
-        </p>
+        <p className="adm-empty">아직 제출된 설문이 없습니다.</p>
       )}
     </>
   );
