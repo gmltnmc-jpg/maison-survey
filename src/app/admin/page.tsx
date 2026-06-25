@@ -15,7 +15,7 @@ export default async function AdminPage({
   } catch {
     return (
       <div style={{ textAlign: "center", marginTop: 80 }}>
-        <p style={{ fontSize: 14, color: "var(--ink-soft)", marginBottom: 16 }}>
+        <p style={{ fontSize: 14, color: "var(--color-text-muted)", marginBottom: 16 }}>
           응답을 불러오지 못했습니다. 잠시 후 다시 시도하세요.
         </p>
         <Link
@@ -23,10 +23,10 @@ export default async function AdminPage({
           style={{
             fontSize: 13,
             padding: "8px 16px",
-            border: "1px solid var(--line)",
+            border: "1px solid var(--color-border)",
             borderRadius: 4,
             textDecoration: "none",
-            color: "var(--ink)",
+            color: "var(--color-text)",
           }}
         >
           다시 시도
@@ -38,10 +38,10 @@ export default async function AdminPage({
   return (
     <div style={{ maxWidth: 1200 }}>
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontFamily: "var(--serif)", fontSize: 20, fontWeight: 500 }}>
+        <h2 style={{ fontFamily: "var(--serif)", fontSize: 20, fontWeight: 600, color: "var(--color-text)" }}>
           초진 설문 응답 목록
         </h2>
-        <p style={{ fontSize: 13, color: "var(--grey)", marginTop: 4 }}>
+        <p style={{ fontSize: "var(--text-admin)", color: "var(--color-text-muted)", marginTop: 4 }}>
           총 {rows.length}건
         </p>
       </div>
